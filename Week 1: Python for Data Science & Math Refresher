@@ -542,4 +542,124 @@ plt.show()
 print("✅ Multi-panel plot saved as 'multi_panel.png'")
 
 print("\n✅ All visualizations created successfully!")
+1.5 Mathematics Refresher
+Mathematics helps you understand how ML algorithms actually work behind the scenes 
+Linear Algebra
+Vectors: Represent data points, features
 
+Matrices: Transform data, represent datasets
+
+Eigenvalues/Eigenvectors: PCA, dimensionality reduction
+
+SVD: Matrix factorization, recommendations
+
+Calculus
+Derivatives: Optimization (gradient descent)
+
+Partial Derivatives: Multi-variable functions
+
+Chain Rule: Backpropagation in neural networks
+
+Integrals: Probability distributions
+
+Probability & Statistics
+Probability Distributions: Normal, Bernoulli, Poisson
+
+Bayes' Theorem: Naive Bayes classifiers
+
+Mean, Variance, Covariance: Data characterization
+
+Hypothesis Testing: Model evaluation
+
+# math_refresher.py
+"""
+Quick mathematical concepts with code examples
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+print("="*60)
+print("MATHEMATICS REFRESHER")
+print("="*60)
+
+# 1. Linear Algebra Examples
+print("\n1. LINEAR ALGEBRA:")
+
+# Vector operations
+v1 = np.array([1, 2, 3])
+v2 = np.array([4, 5, 6])
+
+print(f"Vector v1: {v1}")
+print(f"Vector v2: {v2}")
+print(f"Dot product: {np.dot(v1, v2)}")
+print(f"Cross product: {np.cross(v1, v2)}")
+print(f"Norm (magnitude) of v1: {np.linalg.norm(v1):.2f}")
+print(f"Angle between vectors: {np.arccos(np.dot(v1, v2)/(np.linalg.norm(v1)*np.linalg.norm(v2))):.2f} radians")
+
+# Matrix operations
+A = np.array([[1, 2], [3, 4]])
+B = np.array([[5, 6], [7, 8]])
+
+print(f"\nMatrix A:\n{A}")
+print(f"Matrix B:\n{B}")
+print(f"A + B:\n{A + B}")
+print(f"A @ B (matrix multiplication):\n{A @ B}")
+print(f"Determinant of A: {np.linalg.det(A):.2f}")
+print(f"Inverse of A:\n{np.linalg.inv(A)}")
+
+# Eigenvalues and eigenvectors
+eigenvalues, eigenvectors = np.linalg.eig(A)
+print(f"\nEigenvalues of A: {eigenvalues}")
+print(f"Eigenvectors of A:\n{eigenvectors}")
+
+# 2. Calculus Examples
+print("\n2. CALCULUS:")
+
+# Derivative approximation
+def f(x):
+    return x**2
+
+def f_prime(x):
+    return 2*x
+
+x = np.linspace(-3, 3, 100)
+y = f(x)
+
+# Numerical derivative
+h = 0.001
+x0 = 1.0
+numerical_derivative = (f(x0 + h) - f(x0)) / h
+analytic_derivative = f_prime(x0)
+
+print(f"f(x) = x² at x=1")
+print(f"Numerical derivative: {numerical_derivative:.4f}")
+print(f"Analytic derivative: {analytic_derivative:.4f}")
+print(f"Error: {abs(numerical_derivative - analytic_derivative):.6f}")
+
+# 3. Probability Examples
+print("\n3. PROBABILITY:")
+
+# Normal distribution
+from scipy import stats
+
+mu, sigma = 0, 1  # mean and standard deviation
+normal_dist = stats.norm(mu, sigma)
+
+print(f"Normal distribution (μ={mu}, σ={sigma})")
+print(f"PDF at x=0: {normal_dist.pdf(0):.4f}")
+print(f"CDF at x=1.96: {normal_dist.cdf(1.96):.4f}")
+print(f"95% confidence interval: {normal_dist.ppf(0.025):.2f} to {normal_dist.ppf(0.975):.2f}")
+
+# Bayes' Theorem example
+# P(disease) = 0.01, P(positive|disease) = 0.99, P(positive|no disease) = 0.05
+p_disease = 0.01
+p_positive_given_disease = 0.99
+p_positive_given_no_disease = 0.05
+
+p_no_disease = 1 - p_disease
+p_positive = p_positive_given_disease * p_disease + p_positive_given_no_disease * p_no_disease
+p_disease_given_positive = (p_positive_given_disease * p_disease) / p_positive
+
+print(f"\nBayes' Theorem Example:")
+print(f"P(disease|positive) = {p_disease_given_positive:.4f}")
