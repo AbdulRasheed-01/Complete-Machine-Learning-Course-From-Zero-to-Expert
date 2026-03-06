@@ -19,7 +19,7 @@ By the end of this week, you will be able to:
 ✅ Build and compare multiple models on real datasets
 
 📚 Theory Content
-2.2 Regression vs Classification
+ Regression vs Classification
 
 Aspect	     |         Regression	           |     Classification
 
@@ -32,3 +32,195 @@ Output	     |         e.g., $250,000	       |     e.g., Spam/Not Spam
 Evaluation	 |         MSE, MAE, R²	         |     Accuracy, Precision, Recall
 
 Algorithms	 |         Linear Regression,SVR |     Logistic Regression, KNN
+
+🔧 Practical Exercises
+
+# linear_regression.py
+"""
+Linear Regression from scratch and with scikit-learn
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("LINEAR REGRESSION")
+print("="*60)
+
+# 1. Generate synthetic data
+print("\n1. GENERATING SYNTHETIC DATA:")
+np.random.seed(42)
+X = np.random.rand(100, 1) * 10  # 100 samples, 1 feature
+true_slope = 2.5
+true_intercept = 5.0
+y = true_slope * X.squeeze() + true_intercept + np.random.randn(100) * 2  # Add noise
+
+print(f"X shape: {X.shape}")
+print(f"y shape: {y.shape}")
+print(f"True relationship: y = {true_slope}*x + {true_intercept} + noise")
+
+# Visualize the data
+plt.figure(figsize=(10, 6))
+plt.scatter(X, y, alpha=0.6, label='Data points')
+plt.plot(X, true_slope * X.squeeze() + true_intercept, 'r-', label='True line', linewidth=2)
+plt.xlabel('X')
+plt.ylabel('y')
+plt.title('Synthetic Linear Regression Data')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig('synthetic_data.png')
+plt.show()
+print("✅ Data visualization saved as 'synthetic_data.png'")
+
+# 2. Linear Regression from scratch
+print("\n2. LINEAR REGRESSION FROM SCRATCH:")
+
+class LinearRegressionScratch:
+    """Linear Regression implemented from scratch using Normal Equation"""
+    
+    def __init__(self):
+        self.weights = None
+        self.bias = None
+    
+    def fit(self, X, y):
+        """Fit the model using Normal Equation: θ = (X^T X)^(-1) X^T y"""
+        # Add bias term
+        X_with_bias = np.c_[np.ones(X.shape[0]), X]
+        
+        # Normal Equation
+        theta = np.linalg.inv(X_with_bias.T @ X_with_bias) @ X_with_bias.T @ y
+        
+        self.bias = theta[0]
+        self.weights = theta[1:]
+        
+        print(f"  Learned bias: {self.bias:.4f}")
+        print(f"  Learned weights: {self.weights}")
+    
+    def predict(self, X):
+        """Make predictions"""
+        return X @ self.weights + self.bias
+    
+    def score(self, X, y):
+        """Calculate R² score"""
+        y_pred = self.predict(X)
+        ss_res = np.sum((y - y_pred) ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        return 1 - (ss_res / ss_tot)
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train from scratch model
+scratch_model = LinearRegressionScratch()
+scratch_model.fit(X_train, y_train)
+
+# Predictions
+y_pred_scratch = scratch_model.predict(X_test)
+
+# Evaluate
+mse_scratch = mean_squared_error(y_test, y_pred_scratch)
+mae_scratch = mean_absolute_error(y_test, y_pred_scratch)
+r2_scratch = scratch_model.score(X_test, y_test)
+
+print(f"\n  Scratch Model Performance:")
+print(f"    MSE: {mse_scratch:.4f}")
+print(f"    MAE: {mae_scratch:.4f}")
+print(f"    R²: {r2_scratch:.4f}")
+
+# 3. Linear Regression with scikit-learn
+print("\n3. LINEAR REGRESSION WITH SCIKIT-LEARN:")
+
+sk_model = LinearRegression()
+sk_model.fit(X_train, y_train)
+
+print(f"  Learned bias: {sk_model.intercept_:.4f}")
+print(f"  Learned weights: {sk_model.coef_}")
+
+y_pred_sk = sk_model.predict(X_test)
+
+mse_sk = mean_squared_error(y_test, y_pred_sk)
+mae_sk = mean_absolute_error(y_test, y_pred_sk)
+r2_sk = r2_score(y_test, y_pred_sk)
+
+print(f"\n  scikit-learn Model Performance:")
+print(f"    MSE: {mse_sk:.4f}")
+print(f"    MAE: {mae_sk:.4f}")
+print(f"    R²: {r2_sk:.4f}")
+
+# 4. Visualize predictions
+plt.figure(figsize=(12, 5))
+
+# Training data with regression line
+plt.subplot(1, 2, 1)
+plt.scatter(X_train, y_train, alpha=0.5, label='Training data')
+plt.scatter(X_test, y_test, alpha=0.5, c='red', label='Test data')
+X_line = np.linspace(0, 10, 100).reshape(-1, 1)
+plt.plot(X_line, sk_model.predict(X_line), 'g-', label='Regression line', linewidth=2)
+plt.xlabel('X')
+plt.ylabel('y')
+plt.title('Linear Regression Fit')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+# Predictions vs actual
+plt.subplot(1, 2, 2)
+plt.scatter(y_test, y_pred_sk, alpha=0.6)
+plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', linewidth=2)
+plt.xlabel('Actual Values')
+plt.ylabel('Predicted Values')
+plt.title('Predictions vs Actual')
+plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('linear_regression_results.png')
+plt.show()
+print("✅ Results visualization saved as 'linear_regression_results.png'")
+
+# 5. Multiple Linear Regression
+print("\n4. MULTIPLE LINEAR REGRESSION:")
+
+# Generate multi-feature data
+np.random.seed(42)
+n_samples = 200
+n_features = 3
+X_multi = np.random.randn(n_samples, n_features)
+true_weights = np.array([2.5, -1.8, 3.2])
+true_bias = 4.0
+y_multi = X_multi @ true_weights + true_bias + np.random.randn(n_samples) * 0.5
+
+print(f"True weights: {true_weights}")
+print(f"True bias: {true_bias}")
+
+# Split and train
+X_train_m, X_test_m, y_train_m, y_test_m = train_test_split(X_multi, y_multi, test_size=0.2, random_state=42)
+
+multi_model = LinearRegression()
+multi_model.fit(X_train_m, y_train_m)
+
+print(f"\nLearned weights: {multi_model.coef_}")
+print(f"Learned bias: {multi_model.intercept_:.4f}")
+
+y_pred_multi = multi_model.predict(X_test_m)
+r2_multi = r2_score(y_test_m, y_pred_multi)
+print(f"R² score: {r2_multi:.4f}")
+
+# 6. Feature importance visualization
+plt.figure(figsize=(10, 6))
+features = [f'Feature {i+1}' for i in range(n_features)]
+plt.bar(features, multi_model.coef_, color='skyblue', edgecolor='black')
+plt.axhline(y=0, color='r', linestyle='--', alpha=0.5)
+plt.xlabel('Features')
+plt.ylabel('Coefficient Value')
+plt.title('Feature Importance in Multiple Linear Regression')
+plt.grid(True, alpha=0.3, axis='y')
+plt.savefig('feature_importance.png')
+plt.show()
+print("✅ Feature importance plot saved as 'feature_importance.png'")
+
