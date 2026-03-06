@@ -170,4 +170,22 @@ print(f"Array: {arr}")
 print(f"Mask (arr > 5): {mask}")
 print(f"Filtered values: {arr[mask]}")
 print(f"Values where arr % 2 == 0: {arr[arr % 2 == 0]}")
+Output Preview:
+
+============================================================
+NUMPY FUNDAMENTALS
+============================================================
+
+1. CREATING ARRAYS:
+1D array: [1 2 3 4 5]
+2D array:
+[[1 2 3]
+ [4 5 6]]
+
+Zeros array:
+[[0. 0. 0. 0.]
+ [0. 0. 0. 0.]
+ [0. 0. 0. 0.]]
+...
+
 
