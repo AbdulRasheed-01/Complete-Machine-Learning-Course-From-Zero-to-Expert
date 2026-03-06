@@ -1027,3 +1027,359 @@ plt.tight_layout()
 plt.savefig('model_comparison.png')
 plt.show()
 print("✅ Model comparison saved as 'model_comparison.png'")
+
+📝 Weekly Project: Customer Churn Prediction
+# week2_project.py
+"""
+WEEK 2 PROJECT: Customer Churn Prediction
+Build and compare multiple classification models
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import (accuracy_score, precision_score, recall_score, f1_score,
+                             confusion_matrix, classification_report, roc_curve, auc)
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("WEEK 2 PROJECT: CUSTOMER CHURN PREDICTION")
+print("="*70)
+
+# 1. Create synthetic customer dataset
+print("\n1. CREATING CUSTOMER DATASET:")
+np.random.seed(42)
+n_customers = 1000
+
+# Generate customer features
+data = {
+    'customer_id': range(1000, 1000 + n_customers),
+    'tenure_months': np.random.randint(1, 72, n_customers),
+    'monthly_charges': np.random.uniform(20, 120, n_customers).round(2),
+    'total_charges': np.random.uniform(100, 5000, n_customers).round(2),
+    'contract_type': np.random.choice(['Month-to-month', 'One year', 'Two year'], n_customers),
+    'payment_method': np.random.choice(['Electronic check', 'Mailed check', 
+                                        'Bank transfer', 'Credit card'], n_customers),
+    'internet_service': np.random.choice(['DSL', 'Fiber optic', 'No'], n_customers),
+    'online_security': np.random.choice(['Yes', 'No', 'No internet service'], n_customers),
+    'online_backup': np.random.choice(['Yes', 'No', 'No internet service'], n_customers),
+    'device_protection': np.random.choice(['Yes', 'No', 'No internet service'], n_customers),
+    'tech_support': np.random.choice(['Yes', 'No', 'No internet service'], n_customers),
+    'streaming_tv': np.random.choice(['Yes', 'No', 'No internet service'], n_customers),
+    'streaming_movies': np.random.choice(['Yes', 'No', 'No internet service'], n_customers),
+    'senior_citizen': np.random.choice([0, 1], n_customers, p=[0.8, 0.2]),
+    'partner': np.random.choice(['Yes', 'No'], n_customers),
+    'dependents': np.random.choice(['Yes', 'No'], n_customers, p=[0.3, 0.7]),
+    'num_admin_tickets': np.random.poisson(0.5, n_customers),
+    'num_tech_tickets': np.random.poisson(0.3, n_customers),
+}
+
+# Create churn with some logic
+churn_probability = (
+    0.3 * (data['tenure_months'] < 12) +
+    0.2 * (data['contract_type'] == 'Month-to-month') +
+    0.15 * (data['internet_service'] == 'Fiber optic') +
+    0.1 * (data['payment_method'] == 'Electronic check') +
+    0.1 * (data['num_tech_tickets'] > 2) +
+    0.15 * (data['monthly_charges'] > 80) +
+    np.random.randn(n_customers) * 0.1
+)
+
+churn_probability = np.clip(churn_probability, 0, 0.9)
+data['churn'] = (np.random.random(n_customers) < churn_probability).astype(int)
+
+df = pd.DataFrame(data)
+print(f"Dataset shape: {df.shape}")
+print(f"Churn rate: {df['churn'].mean()*100:.2f}%")
+
+print("\nFirst few rows:")
+print(df.head())
+
+# 2. Exploratory Data Analysis
+print("\n2. EXPLORATORY DATA ANALYSIS:")
+
+# Churn by categorical features
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+categorical_features = ['contract_type', 'payment_method', 'internet_service',
+                       'partner', 'dependents', 'senior_citizen']
+
+for ax, feature in zip(axes.flatten(), categorical_features):
+    churn_rate = df.groupby(feature)['churn'].mean() * 100
+    churn_rate.sort_values().plot(kind='barh', ax=ax, color=['green', 'red'][::-1])
+    ax.set_xlabel('Churn Rate (%)')
+    ax.set_title(f'Churn Rate by {feature}')
+    ax.grid(True, alpha=0.3, axis='x')
+
+plt.tight_layout()
+plt.savefig('churn_categorical.png')
+plt.show()
+print("✅ Categorical analysis saved as 'churn_categorical.png'")
+
+# Numerical features analysis
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+numerical_features = ['tenure_months', 'monthly_charges', 'total_charges',
+                     'num_admin_tickets', 'num_tech_tickets']
+
+for ax, feature in zip(axes.flatten(), numerical_features):
+    for churn_val, color, label in [(0, 'blue', 'No Churn'), (1, 'red', 'Churn')]:
+        data = df[df['churn'] == churn_val][feature].dropna()
+        ax.hist(data, bins=30, alpha=0.5, color=color, label=label, density=True)
+    ax.set_xlabel(feature)
+    ax.set_ylabel('Density')
+    ax.set_title(f'{feature} Distribution by Churn')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('churn_numerical.png')
+plt.show()
+print("✅ Numerical analysis saved as 'churn_numerical.png'")
+
+# Correlation matrix
+plt.figure(figsize=(12, 8))
+numerical_df = df.select_dtypes(include=[np.number])
+corr = numerical_df.corr()
+sns.heatmap(corr, annot=True, cmap='coolwarm', center=0, fmt='.2f',
+            square=True, linewidths=1, cbar_kws={"shrink": 0.8})
+plt.title('Correlation Matrix')
+plt.tight_layout()
+plt.savefig('churn_correlation.png')
+plt.show()
+print("✅ Correlation matrix saved as 'churn_correlation.png'")
+
+# 3. Data Preprocessing
+print("\n3. DATA PREPROCESSING:")
+
+# Separate features and target
+X = df.drop(['customer_id', 'churn'], axis=1)
+y = df['churn']
+
+# Encode categorical variables
+categorical_cols = X.select_dtypes(include=['object']).columns
+label_encoders = {}
+
+for col in categorical_cols:
+    le = LabelEncoder()
+    X[col] = le.fit_transform(X[col].astype(str))
+    label_encoders[col] = le
+
+print(f"Features shape: {X.shape}")
+print(f"Features after encoding: {X.columns.tolist()}")
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# Standardize numerical features
+scaler = StandardScaler()
+numerical_cols = X.select_dtypes(include=[np.number]).columns
+X_train_scaled = X_train.copy()
+X_test_scaled = X_test.copy()
+
+X_train_scaled[numerical_cols] = scaler.fit_transform(X_train[numerical_cols])
+X_test_scaled[numerical_cols] = scaler.transform(X_test[numerical_cols])
+
+print(f"\nTraining set size: {len(X_train)}")
+print(f"Test set size: {len(X_test)}")
+
+# 4. Train multiple models
+print("\n4. TRAINING MODELS:")
+
+models = {
+    'Logistic Regression': LogisticRegression(max_iter=1000, random_state=42),
+    'KNN (k=5)': KNeighborsClassifier(n_neighbors=5),
+    'KNN (k=11)': KNeighborsClassifier(n_neighbors=11)
+}
+
+results = {}
+
+for name, model in models.items():
+    print(f"\n{name}:")
+    
+    # Train
+    model.fit(X_train_scaled, y_train)
+    
+    # Predict
+    y_pred = model.predict(X_test_scaled)
+    y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
+    
+    # Calculate metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
+    
+    # Cross-validation
+    cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=5)
+    
+    print(f"  Accuracy:  {accuracy:.4f}")
+    print(f"  Precision: {precision:.4f}")
+    print(f"  Recall:    {recall:.4f}")
+    print(f"  F1-Score:  {f1:.4f}")
+    print(f"  CV Score:  {cv_scores.mean():.4f} (±{cv_scores.std():.4f})")
+    
+    # Store results
+    results[name] = {
+        'model': model,
+        'y_pred': y_pred,
+        'y_pred_proba': y_pred_proba,
+        'accuracy': accuracy,
+        'precision': precision,
+        'recall': recall,
+        'f1': f1,
+        'cv_mean': cv_scores.mean()
+    }
+
+# 5. Model Comparison
+print("\n5. MODEL COMPARISON:")
+
+# Metrics comparison
+metrics_df = pd.DataFrame({
+    name: {
+        'Accuracy': res['accuracy'],
+        'Precision': res['precision'],
+        'Recall': res['recall'],
+        'F1-Score': res['f1'],
+        'CV Score': res['cv_mean']
+    }
+    for name, res in results.items()
+}).T
+
+print("\nMetrics Comparison:")
+print(metrics_df.round(4))
+
+# Visualize comparison
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+# Bar plot comparison
+metrics = ['Accuracy', 'Precision', 'Recall', 'F1-Score']
+x = np.arange(len(results))
+width = 0.2
+
+for i, metric in enumerate(metrics):
+    ax = axes[i // 2, i % 2]
+    values = [results[name][metric.lower()] for name in results.keys()]
+    ax.bar(x, values, width, color=['blue', 'green', 'orange'])
+    ax.set_xticks(x)
+    ax.set_xticklabels(results.keys(), rotation=45)
+    ax.set_ylabel(metric)
+    ax.set_title(f'{metric} Comparison')
+    ax.grid(True, alpha=0.3, axis='y')
+    
+    # Add value labels
+    for j, v in enumerate(values):
+        ax.text(j, v + 0.01, f'{v:.3f}', ha='center', va='bottom')
+
+plt.tight_layout()
+plt.savefig('model_comparison_churn.png')
+plt.show()
+print("✅ Model comparison saved as 'model_comparison_churn.png'")
+
+# 6. ROC Curves Comparison
+print("\n6. ROC CURVES COMPARISON:")
+
+plt.figure(figsize=(10, 8))
+colors = ['blue', 'green', 'orange']
+
+for (name, res), color in zip(results.items(), colors):
+    fpr, tpr, _ = roc_curve(y_test, res['y_pred_proba'])
+    roc_auc = auc(fpr, tpr)
+    plt.plot(fpr, tpr, color=color, lw=2,
+             label=f'{name} (AUC = {roc_auc:.3f})')
+
+plt.plot([0, 1], [0, 1], 'k--', lw=2, label='Random')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curves Comparison')
+plt.legend(loc='lower right')
+plt.grid(True, alpha=0.3)
+plt.savefig('roc_comparison_churn.png')
+plt.show()
+print("✅ ROC comparison saved as 'roc_comparison_churn.png'")
+
+# 7. Confusion Matrices
+print("\n7. CONFUSION MATRICES:")
+
+fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+
+for ax, (name, res) in zip(axes, results.items()):
+    cm = confusion_matrix(y_test, res['y_pred'])
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax,
+                xticklabels=['No Churn', 'Churn'],
+                yticklabels=['No Churn', 'Churn'])
+    ax.set_title(f'{name}')
+    ax.set_xlabel('Predicted')
+    ax.set_ylabel('Actual')
+
+plt.tight_layout()
+plt.savefig('confusion_matrices_churn.png')
+plt.show()
+print("✅ Confusion matrices saved as 'confusion_matrices_churn.png'")
+
+# 8. Feature Importance (for Logistic Regression)
+print("\n8. FEATURE IMPORTANCE:")
+
+log_reg = results['Logistic Regression']['model']
+feature_importance = pd.DataFrame({
+    'feature': X.columns,
+    'coefficient': log_reg.coef_[0],
+    'abs_coefficient': np.abs(log_reg.coef_[0])
+}).sort_values('abs_coefficient', ascending=False)
+
+print("\nTop 10 most important features:")
+print(feature_importance.head(10).to_string(index=False))
+
+plt.figure(figsize=(10, 8))
+top_features = feature_importance.head(15)
+colors = ['red' if x < 0 else 'green' for x in top_features['coefficient']]
+plt.barh(range(len(top_features)), top_features['coefficient'], color=colors)
+plt.yticks(range(len(top_features)), top_features['feature'])
+plt.xlabel('Coefficient Value')
+plt.title('Feature Importance (Logistic Regression)')
+plt.axvline(x=0, color='black', linestyle='-', linewidth=0.5)
+plt.grid(True, alpha=0.3, axis='x')
+plt.tight_layout()
+plt.savefig('feature_importance_churn.png')
+plt.show()
+print("✅ Feature importance saved as 'feature_importance_churn.png'")
+
+# 9. Best Model Selection
+print("\n9. BEST MODEL SELECTION:")
+
+best_model_name = max(results.items(), key=lambda x: x[1]['f1'])[0]
+best_model = results[best_model_name]['model']
+print(f"Best model based on F1-score: {best_model_name}")
+print(f"F1-Score: {results[best_model_name]['f1']:.4f}")
+
+# 10. Save results
+print("\n10. SAVING RESULTS:")
+
+# Save predictions
+predictions_df = pd.DataFrame({
+    'Actual': y_test.values,
+    'LogisticRegression': results['Logistic Regression']['y_pred'],
+    'KNN_k5': results['KNN (k=5)']['y_pred'],
+    'KNN_k11': results['KNN (k=11)']['y_pred']
+})
+predictions_df.to_csv('churn_predictions.csv', index=False)
+print("✅ Predictions saved to 'churn_predictions.csv'")
+
+# Save metrics
+metrics_df.to_csv('model_metrics.csv')
+print("✅ Metrics saved to 'model_metrics.csv'")
+
+print("\n" + "="*70)
+print("✅ PROJECT COMPLETED SUCCESSFULLY!")
+print("="*70)
+
