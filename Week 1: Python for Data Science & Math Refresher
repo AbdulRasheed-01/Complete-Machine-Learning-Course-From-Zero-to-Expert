@@ -187,5 +187,184 @@ Zeros array:
  [0. 0. 0. 0.]
  [0. 0. 0. 0.]]
 ...
+1.3 Pandas for Data Manipulation
+Pandas provides DataFrame structures for efficient data manipulation and analysis 
 
+# pandas_basics.py
+import pandas as pd
+import numpy as np
+
+print("="*60)
+print("PANDAS FUNDAMENTALS")
+print("="*60)
+
+# 1. Creating DataFrames
+print("\n1. CREATING DATAFRAMES:")
+
+# From dictionary
+data = {
+    'Name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
+    'Age': [25, 30, 35, 28, 32],
+    'Salary': [50000, 60000, 75000, 55000, 68000],
+    'Department': ['HR', 'IT', 'Finance', 'IT', 'Marketing']
+}
+df = pd.DataFrame(data)
+print("DataFrame from dictionary:")
+print(df)
+
+# From NumPy array
+df_np = pd.DataFrame(
+    np.random.randn(5, 3),
+    columns=['A', 'B', 'C'],
+    index=['Row1', 'Row2', 'Row3', 'Row4', 'Row5']
+)
+print("\nDataFrame from NumPy array:")
+print(df_np)
+
+# 2. Exploring DataFrames
+print("\n2. EXPLORING DATAFRAMES:")
+print(f"Shape: {df.shape}")
+print(f"Columns: {df.columns.tolist()}")
+print(f"Index: {df.index.tolist()}")
+print(f"Info:")
+print(df.info())
+print(f"\nDescribe:")
+print(df.describe())
+print(f"\nHead (first 3 rows):")
+print(df.head(3))
+print(f"\nTail (last 2 rows):")
+print(df.tail(2))
+
+# 3. Selecting Data
+print("\n3. SELECTING DATA:")
+print("Single column (Name):")
+print(df['Name'])
+
+print("\nMultiple columns:")
+print(df[['Name', 'Salary']])
+
+print("\nRow by index (iloc):")
+print(df.iloc[2])  # third row
+
+print("\nRow by label (loc):")
+print(df.loc[2])  # same as iloc with default index
+
+print("\nConditional selection:")
+print(df[df['Age'] > 30])
+
+print("\nComplex condition:")
+print(df[(df['Age'] > 25) & (df['Department'] == 'IT')])
+
+# 4. Adding and Removing Columns
+print("\n4. ADDING AND REMOVING COLUMNS:")
+df['Bonus'] = df['Salary'] * 0.1
+print("Added Bonus column:")
+print(df)
+
+df['Age_Group'] = pd.cut(df['Age'], bins=[0, 30, 40, 100], labels=['Young', 'Middle', 'Senior'])
+print("\nAdded Age_Group column:")
+print(df)
+
+df_dropped = df.drop('Bonus', axis=1)
+print("\nDropped Bonus column:")
+print(df_dropped)
+
+# 5. Handling Missing Data
+print("\n5. HANDLING MISSING DATA:")
+df_missing = df.copy()
+df_missing.loc[2, 'Salary'] = np.nan
+df_missing.loc[4, 'Age'] = np.nan
+print("DataFrame with missing values:")
+print(df_missing)
+
+print(f"\nCheck for nulls:")
+print(df_missing.isnull().sum())
+
+print("\nDrop rows with any null:")
+print(df_missing.dropna())
+
+print("\nFill missing values:")
+print(df_missing.fillna({
+    'Salary': df_missing['Salary'].mean(),
+    'Age': df_missing['Age'].median()
+}))
+
+# 6. Grouping and Aggregation
+print("\n6. GROUPING AND AGGREGATION:")
+print("Group by Department:")
+dept_group = df.groupby('Department')
+print(dept_group['Salary'].mean())
+
+print("\nMultiple aggregations:")
+print(df.groupby('Department').agg({
+    'Salary': ['mean', 'min', 'max', 'count'],
+    'Age': 'mean'
+}))
+
+# 7. Merging and Joining
+print("\n7. MERGING DATAFRAMES:")
+df1 = pd.DataFrame({
+    'ID': [1, 2, 3],
+    'Name': ['Alice', 'Bob', 'Charlie']
+})
+df2 = pd.DataFrame({
+    'ID': [2, 3, 4],
+    'Score': [85, 92, 78]
+})
+
+print("Inner merge:")
+print(pd.merge(df1, df2, on='ID', how='inner'))
+
+print("\nLeft merge:")
+print(pd.merge(df1, df2, on='ID', how='left'))
+
+# 8. Pivot Tables
+print("\n8. PIVOT TABLES:")
+pivot = pd.pivot_table(
+    df,
+    values='Salary',
+    index='Department',
+    columns='Age_Group',
+    aggfunc=np.mean,
+    fill_value=0
+)
+print(pivot)
+
+# 9. Applying Functions
+print("\n9. APPLYING FUNCTIONS:")
+df['Salary_K'] = df['Salary'].apply(lambda x: f"${x/1000:.1f}K")
+print(df[['Name', 'Salary', 'Salary_K']])
+
+def age_category(age):
+    if age < 30:
+        return 'Junior'
+    elif age < 35:
+        return 'Mid'
+    else:
+        return 'Senior'
+
+df['Level'] = df['Age'].apply(age_category)
+print(df[['Name', 'Age', 'Level']])
+
+# 10. Reading/Writing Data
+print("\n10. READING/WRITING DATA:")
+# Save to CSV
+df.to_csv('sample_data.csv', index=False)
+print("Saved to sample_data.csv")
+
+# Read from CSV
+df_loaded = pd.read_csv('sample_data.csv')
+print("Loaded from CSV:")
+print(df_loaded.head())
+
+# 11. Working with Dates
+print("\n11. WORKING WITH DATES:")
+date_rng = pd.date_range(start='2024-01-01', end='2024-01-10', freq='D')
+df_dates = pd.DataFrame(date_rng, columns=['date'])
+df_dates['data'] = np.random.randint(0, 100, size=(len(date_rng)))
+df_dates['year'] = df_dates['date'].dt.year
+df_dates['month'] = df_dates['date'].dt.month
+df_dates['day'] = df_dates['date'].dt.day
+df_dates['dayofweek'] = df_dates['date'].dt.dayofweek
+print(df_dates)
 
