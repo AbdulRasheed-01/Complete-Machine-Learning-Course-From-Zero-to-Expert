@@ -368,3 +368,7 @@ df_dates['day'] = df_dates['date'].dt.day
 df_dates['dayofweek'] = df_dates['date'].dt.dayofweek
 print(df_dates)
 
+1.4 Data Visualization with Matplotlib and Seaborn
+
+Visualization helps uncover patterns, trends, and correlations in data 
+
