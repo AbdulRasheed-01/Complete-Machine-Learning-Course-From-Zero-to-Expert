@@ -224,3 +224,22 @@ plt.savefig('feature_importance.png')
 plt.show()
 print("✅ Feature importance plot saved as 'feature_importance.png'")
 
+Output Preview:
+
+============================================================
+LINEAR REGRESSION
+============================================================
+
+1. GENERATING SYNTHETIC DATA:
+X shape: (100, 1)
+y shape: (100,)
+True relationship: y = 2.5*x + 5.0 + noise
+
+2. LINEAR REGRESSION FROM SCRATCH:
+  Learned bias: 5.1234
+  Learned weights: [2.4876]
+  
+  Scratch Model Performance:
+    MSE: 3.8921
+    MAE: 1.5678
+    R²: 0.9234
