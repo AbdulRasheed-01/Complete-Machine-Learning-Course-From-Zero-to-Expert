@@ -31,3 +31,31 @@ By the end of this week, you will be able to:
 
 ✅ Work through a complete Exploratory Data Analysis (EDA) project
 
+1.1 Environment Setup
+
+Installation
+
+# Create a virtual environment
+python -m venv ml_env
+source ml_env/bin/activate  # On Windows: ml_env\Scripts\activate
+
+# Install core data science packages
+pip install numpy pandas matplotlib seaborn jupyter scipy
+
+# For mathematical symbolic computation (optional)
+pip install sympy
+
+# Launch Jupyter Notebook
+jupyter notebook
+
+Verify Installation
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+print(f"NumPy version: {np.__version__}")
+print(f"Pandas version: {pd.__version__}")
+print("Setup successful!")
+
+
