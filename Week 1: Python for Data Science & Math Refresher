@@ -848,5 +848,27 @@ print("  - Create feature: IsAlone (FamilySize == 1)")
 print("  - Bin Age into categories (Child, Adult, Senior)")
 
 print("\n✅ Project completed successfully!")
+📚 Week 1 Summary
+What You Learned
+✅ NumPy for numerical computations
 
+✅ Pandas for data manipulation
+
+✅ Matplotlib and Seaborn for visualization
+
+✅ Basic mathematical concepts for ML
+
+✅ Complete EDA workflow
+
+Key Functions Learned
+
+Library	   |          Function	                     |      Purpose
+
+NumPy	     |          np.array(), np.reshape()	     |      Array operations
+
+Pandas	    |          pd.read_csv(), df.groupby()   |     	Data manipulation
+
+Matplotlib	|          plt.plot(), plt.hist()	       |      Basic plotting
+
+Seaborn	   |          sns.heatmap(), sns.pairplot() |	     Statistical plots
 
