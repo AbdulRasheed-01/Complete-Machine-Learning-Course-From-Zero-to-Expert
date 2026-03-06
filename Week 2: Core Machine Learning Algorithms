@@ -1,1 +1,20 @@
 Week 2: Core Machine Learning Algorithms
+📋 Learning Objectives
+By the end of this week, you will be able to:
+
+✅ Understand the difference between supervised and unsupervised learning
+
+✅ Implement Linear Regression for prediction tasks
+
+✅ Use Logistic Regression for binary classification
+
+✅ Apply K-Nearest Neighbors for both regression and classification
+
+✅ Split data into training and testing sets
+
+✅ Evaluate models using appropriate metrics
+
+✅ Avoid overfitting and underfitting
+
+✅ Build and compare multiple models on real datasets
+
