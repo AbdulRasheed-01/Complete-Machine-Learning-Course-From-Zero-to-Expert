@@ -18,3 +18,17 @@ By the end of this week, you will be able to:
 
 ✅ Build and compare multiple models on real datasets
 
+📚 Theory Content
+2.2 Regression vs Classification
+
+Aspect	     |         Regression	           |     Classification
+
+Target	     |         Continuous value	     |     Discrete class
+
+Example	     |         House price	         |     Spam detection
+
+Output	     |         e.g., $250,000	       |     e.g., Spam/Not Spam
+
+Evaluation	 |         MSE, MAE, R²	         |     Accuracy, Precision, Recall
+
+Algorithms	 |         Linear Regression,SVR |     Logistic Regression, KNN
