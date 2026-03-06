@@ -732,3 +732,298 @@ weighted_score = np.mean(cross_val_score(knn_weighted, X_train_scaled, y_train, 
 
 print(f"  Unweighted (uniform): {unweighted_score:.4f}")
 print(f"  Weighted (distance): {weighted_score:.4f}")
+
+Exercise 4: Model Evaluation and Validation
+
+# model_evaluation.py
+"""
+Comprehensive model evaluation techniques
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import make_classification, load_breast_cancer
+from sklearn.model_selection import train_test_split, cross_val_score, learning_curve
+from sklearn.model_selection import validation_curve, GridSearchCV, RandomizedSearchCV
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import (accuracy_score, precision_score, recall_score, f1_score,
+                             confusion_matrix, classification_report, roc_curve, auc,
+                             precision_recall_curve, average_precision_score)
+from sklearn.preprocessing import StandardScaler
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("MODEL EVALUATION AND VALIDATION")
+print("="*60)
+
+# Load real dataset
+print("\n1. LOADING DATASET:")
+data = load_breast_cancer()
+X, y = data.data, data.target
+feature_names = data.feature_names
+target_names = data.target_names
+
+print(f"Dataset shape: {X.shape}")
+print(f"Features: {feature_names[:5]}...")
+print(f"Classes: {target_names}")
+print(f"Class distribution: {np.bincount(y)}")
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# Standardize
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 2. Basic Classification Metrics
+print("\n2. BASIC CLASSIFICATION METRICS:")
+
+# Train a model
+model = LogisticRegression(max_iter=1000, random_state=42)
+model.fit(X_train_scaled, y_train)
+y_pred = model.predict(X_test_scaled)
+y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
+
+# Calculate metrics
+accuracy = accuracy_score(y_test, y_pred)
+precision = precision_score(y_test, y_pred)
+recall = recall_score(y_test, y_pred)
+f1 = f1_score(y_test, y_pred)
+
+print(f"Accuracy:  {accuracy:.4f}")
+print(f"Precision: {precision:.4f}")
+print(f"Recall:    {recall:.4f}")
+print(f"F1-Score:  {f1:.4f}")
+
+# Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+print("\nConfusion Matrix:")
+print(cm)
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=target_names, yticklabels=target_names)
+plt.title('Confusion Matrix')
+plt.ylabel('True Label')
+plt.xlabel('Predicted Label')
+plt.savefig('confusion_matrix.png')
+plt.show()
+print("✅ Confusion matrix saved as 'confusion_matrix.png'")
+
+# 3. Classification Report
+print("\n3. DETAILED CLASSIFICATION REPORT:")
+print(classification_report(y_test, y_pred, target_names=target_names))
+
+# 4. ROC Curve and AUC
+print("\n4. ROC CURVE AND AUC:")
+
+fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
+roc_auc = auc(fpr, tpr)
+
+plt.figure(figsize=(8, 6))
+plt.plot(fpr, tpr, 'b-', linewidth=2, label=f'ROC curve (AUC = {roc_auc:.3f})')
+plt.plot([0, 1], [0, 1], 'r--', linewidth=2, label='Random classifier')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver Operating Characteristic (ROC) Curve')
+plt.legend(loc='lower right')
+plt.grid(True, alpha=0.3)
+
+# Find optimal threshold
+optimal_idx = np.argmax(tpr - fpr)
+optimal_threshold = thresholds[optimal_idx]
+plt.scatter(fpr[optimal_idx], tpr[optimal_idx], c='red', s=100, 
+            label=f'Optimal threshold = {optimal_threshold:.3f}')
+plt.legend()
+plt.savefig('roc_curve_detailed.png')
+plt.show()
+print(f"✅ ROC curve saved as 'roc_curve_detailed.png' (AUC = {roc_auc:.3f})")
+print(f"Optimal threshold: {optimal_threshold:.3f}")
+
+# 5. Precision-Recall Curve
+print("\n5. PRECISION-RECALL CURVE:")
+
+precision_vals, recall_vals, _ = precision_recall_curve(y_test, y_pred_proba)
+avg_precision = average_precision_score(y_test, y_pred_proba)
+
+plt.figure(figsize=(8, 6))
+plt.plot(recall_vals, precision_vals, 'g-', linewidth=2, 
+         label=f'PR curve (AP = {avg_precision:.3f})')
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('Precision-Recall Curve')
+plt.legend(loc='best')
+plt.grid(True, alpha=0.3)
+plt.savefig('pr_curve.png')
+plt.show()
+print(f"✅ PR curve saved as 'pr_curve.png' (Average Precision = {avg_precision:.3f})")
+
+# 6. Cross-Validation
+print("\n6. CROSS-VALIDATION:")
+
+cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=5, scoring='accuracy')
+print(f"CV Scores: {cv_scores}")
+print(f"Mean CV Score: {cv_scores.mean():.4f} (±{cv_scores.std():.4f})")
+
+# 7. Learning Curves
+print("\n7. LEARNING CURVES:")
+
+train_sizes, train_scores, test_scores = learning_curve(
+    model, X_train_scaled, y_train, cv=5, n_jobs=-1,
+    train_sizes=np.linspace(0.1, 1.0, 10),
+    scoring='accuracy'
+)
+
+train_mean = np.mean(train_scores, axis=1)
+train_std = np.std(train_scores, axis=1)
+test_mean = np.mean(test_scores, axis=1)
+test_std = np.std(test_scores, axis=1)
+
+plt.figure(figsize=(10, 6))
+plt.fill_between(train_sizes, train_mean - train_std, train_mean + train_std, 
+                 alpha=0.1, color='blue')
+plt.fill_between(train_sizes, test_mean - test_std, test_mean + test_std, 
+                 alpha=0.1, color='orange')
+plt.plot(train_sizes, train_mean, 'o-', color='blue', label='Training score')
+plt.plot(train_sizes, test_mean, 'o-', color='orange', label='Cross-validation score')
+plt.xlabel('Training Examples')
+plt.ylabel('Accuracy')
+plt.title('Learning Curves')
+plt.legend(loc='best')
+plt.grid(True, alpha=0.3)
+plt.savefig('learning_curves.png')
+plt.show()
+print("✅ Learning curves saved as 'learning_curves.png'")
+
+# 8. Validation Curves (k parameter for KNN)
+print("\n8. VALIDATION CURVES:")
+
+param_range = range(1, 30, 2)
+train_scores, test_scores = validation_curve(
+    KNeighborsClassifier(), X_train_scaled, y_train,
+    param_name="n_neighbors", param_range=param_range,
+    cv=5, scoring='accuracy', n_jobs=-1
+)
+
+train_mean = np.mean(train_scores, axis=1)
+train_std = np.std(train_scores, axis=1)
+test_mean = np.mean(test_scores, axis=1)
+test_std = np.std(test_scores, axis=1)
+
+plt.figure(figsize=(10, 6))
+plt.fill_between(param_range, train_mean - train_std, train_mean + train_std, 
+                 alpha=0.1, color='blue')
+plt.fill_between(param_range, test_mean - test_std, test_mean + test_std, 
+                 alpha=0.1, color='orange')
+plt.plot(param_range, train_mean, 'o-', color='blue', label='Training score')
+plt.plot(param_range, test_mean, 'o-', color='orange', label='Cross-validation score')
+plt.xlabel('k (Number of Neighbors)')
+plt.ylabel('Accuracy')
+plt.title('Validation Curve for KNN')
+plt.legend(loc='best')
+plt.grid(True, alpha=0.3)
+plt.savefig('validation_curve.png')
+plt.show()
+print("✅ Validation curve saved as 'validation_curve.png'")
+
+# 9. Grid Search for Hyperparameter Tuning
+print("\n9. GRID SEARCH HYPERPARAMETER TUNING:")
+
+param_grid = {
+    'C': [0.01, 0.1, 1, 10, 100],
+    'penalty': ['l1', 'l2'],
+    'solver': ['liblinear', 'saga']
+}
+
+grid_search = GridSearchCV(
+    LogisticRegression(max_iter=1000, random_state=42),
+    param_grid, cv=5, scoring='accuracy', n_jobs=-1, verbose=1
+)
+grid_search.fit(X_train_scaled, y_train)
+
+print(f"Best parameters: {grid_search.best_params_}")
+print(f"Best CV score: {grid_search.best_score_:.4f}")
+
+# Evaluate best model on test set
+best_model = grid_search.best_estimator_
+y_pred_best = best_model.predict(X_test_scaled)
+test_accuracy = accuracy_score(y_test, y_pred_best)
+print(f"Test accuracy with best model: {test_accuracy:.4f}")
+
+# 10. Randomized Search
+print("\n10. RANDOMIZED SEARCH:")
+
+from scipy.stats import uniform, randint
+
+param_dist = {
+    'n_neighbors': randint(1, 30),
+    'weights': ['uniform', 'distance'],
+    'p': [1, 2],
+    'metric': ['euclidean', 'manhattan', 'chebyshev']
+}
+
+random_search = RandomizedSearchCV(
+    KNeighborsClassifier(), param_dist, n_iter=50,
+    cv=5, scoring='accuracy', random_state=42, n_jobs=-1
+)
+random_search.fit(X_train_scaled, y_train)
+
+print(f"\nBest KNN parameters: {random_search.best_params_}")
+print(f"Best CV score: {random_search.best_score_:.4f}")
+
+# 11. Model Comparison
+print("\n11. MODEL COMPARISON:")
+
+models = {
+    'Logistic Regression': LogisticRegression(max_iter=1000, random_state=42),
+    'KNN (k=5)': KNeighborsClassifier(n_neighbors=5),
+    'KNN (k=11)': KNeighborsClassifier(n_neighbors=11),
+    'KNN (optimal)': KNeighborsClassifier(**random_search.best_params_)
+}
+
+results = []
+for name, model in models.items():
+    cv_scores = cross_val_score(model, X_train_scaled, y_train, cv=5, scoring='accuracy')
+    model.fit(X_train_scaled, y_train)
+    y_pred = model.predict(X_test_scaled)
+    test_acc = accuracy_score(y_test, y_pred)
+    
+    results.append({
+        'Model': name,
+        'CV Mean': cv_scores.mean(),
+        'CV Std': cv_scores.std(),
+        'Test Accuracy': test_acc
+    })
+
+results_df = pd.DataFrame(results)
+print(results_df.to_string(index=False))
+
+# Visualize comparison
+plt.figure(figsize=(12, 6))
+x = np.arange(len(results_df))
+width = 0.35
+
+plt.bar(x - width/2, results_df['CV Mean'], width, yerr=results_df['CV Std'],
+        label='Cross-validation', capsize=5, color='skyblue', edgecolor='black')
+plt.bar(x + width/2, results_df['Test Accuracy'], width,
+        label='Test', color='lightgreen', edgecolor='black')
+
+plt.xlabel('Models')
+plt.ylabel('Accuracy')
+plt.title('Model Comparison')
+plt.xticks(x, results_df['Model'], rotation=15)
+plt.legend()
+plt.grid(True, alpha=0.3, axis='y')
+plt.tight_layout()
+plt.savefig('model_comparison.png')
+plt.show()
+print("✅ Model comparison saved as 'model_comparison.png'")
