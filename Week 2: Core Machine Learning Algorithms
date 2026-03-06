@@ -474,3 +474,261 @@ plt.show()
 print("✅ Multi-class confusion matrix saved as 'multiclass_cm.png'")
 
 Exercise 3: K-Nearest Neighbors (KNN)
+
+# knn.py
+"""
+K-Nearest Neighbors algorithm for classification and regression
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn.metrics import accuracy_score, confusion_matrix, mean_squared_error
+from sklearn.datasets import make_classification, make_regression
+from sklearn.preprocessing import StandardScaler
+import seaborn as sns
+from collections import Counter
+
+print("="*60)
+print("K-NEAREST NEIGHBORS (KNN)")
+print("="*60)
+
+# 1. KNN for Classification
+print("\n1. KNN CLASSIFICATION:")
+
+# Generate synthetic data
+X_clf, y_clf = make_classification(
+    n_samples=300, n_features=2, n_redundant=0, n_clusters_per_class=1,
+    n_classes=3, random_state=42
+)
+
+print(f"Classification data shape: {X_clf.shape}")
+print(f"Classes: {np.unique(y_clf)}")
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X_clf, y_clf, test_size=0.2, random_state=42, stratify=y_clf
+)
+
+# Standardize features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 2. Implement KNN from scratch
+print("\n2. KNN FROM SCRATCH:")
+
+class KNNClassifierScratch:
+    """K-Nearest Neighbors classifier implemented from scratch"""
+    
+    def __init__(self, k=3):
+        self.k = k
+        self.X_train = None
+        self.y_train = None
+    
+    def fit(self, X, y):
+        """Store training data (lazy learning)"""
+        self.X_train = X
+        self.y_train = y
+    
+    def euclidean_distance(self, a, b):
+        """Calculate Euclidean distance between two points"""
+        return np.sqrt(np.sum((a - b) ** 2))
+    
+    def predict_single(self, x):
+        """Predict class for a single sample"""
+        # Calculate distances to all training points
+        distances = [self.euclidean_distance(x, x_train) for x_train in self.X_train]
+        
+        # Get indices of k nearest neighbors
+        k_indices = np.argsort(distances)[:self.k]
+        
+        # Get labels of k nearest neighbors
+        k_nearest_labels = [self.y_train[i] for i in k_indices]
+        
+        # Return most common label
+        most_common = Counter(k_nearest_labels).most_common(1)
+        return most_common[0][0]
+    
+    def predict(self, X):
+        """Predict classes for multiple samples"""
+        return np.array([self.predict_single(x) for x in X])
+    
+    def score(self, X, y):
+        """Calculate accuracy"""
+        predictions = self.predict(X)
+        return np.mean(predictions == y)
+
+# Train scratch KNN
+k_values = [1, 3, 5, 7, 9, 11, 15]
+scratch_scores = []
+
+for k in k_values:
+    knn_scratch = KNNClassifierScratch(k=k)
+    knn_scratch.fit(X_train_scaled, y_train)
+    score = knn_scratch.score(X_test_scaled, y_test)
+    scratch_scores.append(score)
+    print(f"  k={k}: Accuracy = {score:.4f}")
+
+# 3. KNN with scikit-learn
+print("\n3. KNN WITH SCIKIT-LEARN:")
+
+sk_scores = []
+for k in k_values:
+    knn_sk = KNeighborsClassifier(n_neighbors=k)
+    knn_sk.fit(X_train_scaled, y_train)
+    score = knn_sk.score(X_test_scaled, y_test)
+    sk_scores.append(score)
+    print(f"  k={k}: Accuracy = {score:.4f}")
+
+# 4. Finding optimal k with cross-validation
+print("\n4. FINDING OPTIMAL K WITH CROSS-VALIDATION:")
+
+cv_scores = []
+cv_std = []
+
+for k in k_values:
+    knn = KNeighborsClassifier(n_neighbors=k)
+    scores = cross_val_score(knn, X_train_scaled, y_train, cv=5, scoring='accuracy')
+    cv_scores.append(scores.mean())
+    cv_std.append(scores.std())
+    print(f"  k={k}: CV Accuracy = {scores.mean():.4f} (±{scores.std():.4f})")
+
+optimal_k = k_values[np.argmax(cv_scores)]
+print(f"\n✅ Optimal k = {optimal_k}")
+
+# 5. Visualize k performance
+plt.figure(figsize=(12, 5))
+
+# Subplot 1: Accuracy vs k
+plt.subplot(1, 2, 1)
+plt.plot(k_values, scratch_scores, 'o-', label='Scratch KNN', linewidth=2)
+plt.plot(k_values, sk_scores, 's-', label='scikit-learn KNN', linewidth=2)
+plt.errorbar(k_values, cv_scores, yerr=cv_std, fmt='--', capsize=5, 
+             label='CV Mean ± Std', alpha=0.7)
+plt.xlabel('k (Number of Neighbors)')
+plt.ylabel('Accuracy')
+plt.title('KNN Performance vs k')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.xticks(k_values)
+
+# Subplot 2: Decision boundary for optimal k
+plt.subplot(1, 2, 2)
+knn_optimal = KNeighborsClassifier(n_neighbors=optimal_k)
+knn_optimal.fit(X_train_scaled, y_train)
+
+# Create mesh grid
+h = 0.02
+x_min, x_max = X_train_scaled[:, 0].min() - 1, X_train_scaled[:, 0].max() + 1
+y_min, y_max = X_train_scaled[:, 1].min() - 1, X_train_scaled[:, 1].max() + 1
+xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                     np.arange(y_min, y_max, h))
+
+# Predict on mesh grid
+Z = knn_optimal.predict(np.c_[xx.ravel(), yy.ravel()])
+Z = Z.reshape(xx.shape)
+
+# Plot
+plt.contourf(xx, yy, Z, alpha=0.3, cmap='viridis')
+plt.scatter(X_train_scaled[:, 0], X_train_scaled[:, 1], 
+            c=y_train, edgecolors='black', s=40, alpha=0.6)
+plt.scatter(X_test_scaled[:, 0], X_test_scaled[:, 1], 
+            c=y_test, edgecolors='red', s=60, marker='s', alpha=0.6, label='Test')
+plt.xlabel('Feature 1 (scaled)')
+plt.ylabel('Feature 2 (scaled)')
+plt.title(f'KNN Decision Boundary (k={optimal_k})')
+plt.legend()
+plt.colorbar()
+
+plt.tight_layout()
+plt.savefig('knn_analysis.png')
+plt.show()
+print("✅ KNN analysis saved as 'knn_analysis.png'")
+
+# 6. Effect of different distance metrics
+print("\n5. EFFECT OF DIFFERENT DISTANCE METRICS:")
+
+metrics = ['euclidean', 'manhattan', 'chebyshev', 'minkowski']
+metric_scores = []
+
+for metric in metrics:
+    knn = KNeighborsClassifier(n_neighbors=optimal_k, metric=metric)
+    scores = cross_val_score(knn, X_train_scaled, y_train, cv=5)
+    mean_score = scores.mean()
+    metric_scores.append(mean_score)
+    print(f"  {metric}: {mean_score:.4f}")
+
+plt.figure(figsize=(10, 6))
+plt.bar(metrics, metric_scores, color='skyblue', edgecolor='black')
+plt.xlabel('Distance Metric')
+plt.ylabel('Cross-Validation Accuracy')
+plt.title('KNN Performance with Different Distance Metrics')
+plt.grid(True, alpha=0.3, axis='y')
+plt.savefig('knn_metrics.png')
+plt.show()
+print("✅ Metric comparison saved as 'knn_metrics.png'")
+
+# 7. KNN for Regression
+print("\n6. KNN FOR REGRESSION:")
+
+# Generate regression data
+X_reg, y_reg = make_regression(
+    n_samples=200, n_features=1, noise=15, random_state=42
+)
+
+X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(
+    X_reg, y_reg, test_size=0.2, random_state=42
+)
+
+# Standardize
+scaler_r = StandardScaler()
+X_train_r_scaled = scaler_r.fit_transform(X_train_r)
+X_test_r_scaled = scaler_r.transform(X_test_r)
+
+# Train KNN regressor with different k values
+k_values_r = [1, 3, 5, 7, 9, 11]
+plt.figure(figsize=(14, 8))
+
+for i, k in enumerate(k_values_r, 1):
+    knn_reg = KNeighborsRegressor(n_neighbors=k)
+    knn_reg.fit(X_train_r_scaled, y_train_r)
+    
+    # Predict on test set
+    y_pred_r = knn_reg.predict(X_test_r_scaled)
+    mse = mean_squared_error(y_test_r, y_pred_r)
+    
+    # Predict on whole range for smooth curve
+    X_smooth = np.linspace(X_reg.min(), X_reg.max(), 300).reshape(-1, 1)
+    X_smooth_scaled = scaler_r.transform(X_smooth)
+    y_smooth = knn_reg.predict(X_smooth_scaled)
+    
+    plt.subplot(2, 3, i)
+    plt.scatter(X_train_r, y_train_r, alpha=0.5, label='Training', s=30)
+    plt.scatter(X_test_r, y_test_r, alpha=0.7, label='Test', s=50, c='red')
+    plt.plot(X_smooth, y_smooth, 'g-', linewidth=2, label='KNN prediction')
+    plt.xlabel('X')
+    plt.ylabel('y')
+    plt.title(f'KNN Regression (k={k}, MSE={mse:.2f})')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('knn_regression.png')
+plt.show()
+print("✅ KNN regression results saved as 'knn_regression.png'")
+
+# 8. Weighted vs Unweighted KNN
+print("\n7. WEIGHTED VS UNWEIGHTED KNN:")
+
+# Unweighted
+knn_unweighted = KNeighborsClassifier(n_neighbors=optimal_k, weights='uniform')
+unweighted_score = np.mean(cross_val_score(knn_unweighted, X_train_scaled, y_train, cv=5))
+
+# Weighted by distance
+knn_weighted = KNeighborsClassifier(n_neighbors=optimal_k, weights='distance')
+weighted_score = np.mean(cross_val_score(knn_weighted, X_train_scaled, y_train, cv=5))
+
+print(f"  Unweighted (uniform): {unweighted_score:.4f}")
+print(f"  Weighted (distance): {weighted_score:.4f}")
