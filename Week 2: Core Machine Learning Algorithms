@@ -243,3 +243,233 @@ True relationship: y = 2.5*x + 5.0 + noise
     MSE: 3.8921
     MAE: 1.5678
     R²: 0.9234
+Exercise 2: Logistic Regression
+# logistic_regression.py
+"""
+Logistic Regression for binary classification
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.metrics import roc_curve, roc_auc_score, precision_recall_curve
+import seaborn as sns
+
+print("="*60)
+print("LOGISTIC REGRESSION")
+print("="*60)
+
+# 1. Generate synthetic classification data
+print("\n1. GENERATING SYNTHETIC CLASSIFICATION DATA:")
+np.random.seed(42)
+
+# Create two classes
+n_samples = 300
+X_class0 = np.random.randn(n_samples//2, 2) + np.array([2, 2])
+X_class1 = np.random.randn(n_samples//2, 2) + np.array([-2, -2])
+X = np.vstack([X_class0, X_class1])
+y = np.hstack([np.zeros(n_samples//2), np.ones(n_samples//2)])
+
+# Shuffle data
+shuffle_idx = np.random.permutation(n_samples)
+X = X[shuffle_idx]
+y = y[shuffle_idx]
+
+print(f"X shape: {X.shape}")
+print(f"y shape: {y.shape}")
+print(f"Class distribution: {np.bincount(y.astype(int))}")
+
+# Visualize data
+plt.figure(figsize=(10, 6))
+plt.scatter(X[y==0, 0], X[y==0, 1], alpha=0.6, label='Class 0', c='blue', edgecolors='black')
+plt.scatter(X[y==1, 0], X[y==1, 1], alpha=0.6, label='Class 1', c='red', edgecolors='black')
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.title('Synthetic Binary Classification Data')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig('classification_data.png')
+plt.show()
+print("✅ Classification data saved as 'classification_data.png'")
+
+# 2. Split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+print(f"\nTraining set size: {len(X_train)}")
+print(f"Test set size: {len(X_test)}")
+
+# 3. Train Logistic Regression
+print("\n2. TRAINING LOGISTIC REGRESSION:")
+log_reg = LogisticRegression()
+log_reg.fit(X_train, y_train)
+
+print(f"Coefficients: {log_reg.coef_[0]}")
+print(f"Intercept: {log_reg.intercept_[0]:.4f}")
+
+# 4. Make predictions
+y_pred = log_reg.predict(X_test)
+y_pred_proba = log_reg.predict_proba(X_test)[:, 1]
+
+# 5. Evaluate model
+print("\n3. MODEL EVALUATION:")
+
+# Accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy:.4f}")
+
+# Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+print("\nConfusion Matrix:")
+print(cm)
+
+# Classification Report
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred, target_names=['Class 0', 'Class 1']))
+
+# 6. Visualize decision boundary
+print("\n4. VISUALIZING DECISION BOUNDARY:")
+
+def plot_decision_boundary(X, y, model, title):
+    """Plot decision boundary of a classifier"""
+    h = 0.02  # step size in the mesh
+    
+    # Create a mesh grid
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h),
+                         np.arange(y_min, y_max, h))
+    
+    # Predict on mesh grid
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+    
+    # Plot
+    plt.figure(figsize=(10, 8))
+    plt.contourf(xx, yy, Z, alpha=0.3, cmap='coolwarm')
+    plt.scatter(X[y==0, 0], X[y==0, 1], c='blue', edgecolors='black', 
+                label='Class 0', s=50, alpha=0.6)
+    plt.scatter(X[y==1, 0], X[y==1, 1], c='red', edgecolors='black',
+                label='Class 1', s=50, alpha=0.6)
+    plt.xlabel('Feature 1')
+    plt.ylabel('Feature 2')
+    plt.title(title)
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    return plt.gcf()
+
+fig = plot_decision_boundary(X_test, y_test, log_reg, 'Logistic Regression Decision Boundary')
+plt.savefig('decision_boundary.png')
+plt.show()
+print("✅ Decision boundary saved as 'decision_boundary.png'")
+
+# 7. ROC Curve
+print("\n5. ROC CURVE:")
+
+y_pred_proba = log_reg.predict_proba(X_test)[:, 1]
+fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
+roc_auc = roc_auc_score(y_test, y_pred_proba)
+
+plt.figure(figsize=(8, 6))
+plt.plot(fpr, tpr, 'b-', linewidth=2, label=f'ROC curve (AUC = {roc_auc:.3f})')
+plt.plot([0, 1], [0, 1], 'r--', linewidth=2, label='Random classifier')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate (1 - Specificity)')
+plt.ylabel('True Positive Rate (Sensitivity)')
+plt.title('Receiver Operating Characteristic (ROC) Curve')
+plt.legend(loc='lower right')
+plt.grid(True, alpha=0.3)
+plt.savefig('roc_curve.png')
+plt.show()
+print(f"✅ ROC curve saved as 'roc_curve.png' (AUC = {roc_auc:.3f})")
+
+# 8. Precision-Recall Curve
+print("\n6. PRECISION-RECALL CURVE:")
+
+precision, recall, _ = precision_recall_curve(y_test, y_pred_proba)
+
+plt.figure(figsize=(8, 6))
+plt.plot(recall, precision, 'g-', linewidth=2)
+plt.xlabel('Recall')
+plt.ylabel('Precision')
+plt.title('Precision-Recall Curve')
+plt.grid(True, alpha=0.3)
+plt.savefig('precision_recall_curve.png')
+plt.show()
+print("✅ Precision-Recall curve saved as 'precision_recall_curve.png'")
+
+# 9. Probability calibration
+print("\n7. PROBABILITY CALIBRATION:")
+
+# Create bins
+bins = np.linspace(0, 1, 11)
+bin_indices = np.digitize(y_pred_proba, bins) - 1
+
+# Calculate fraction of positives in each bin
+frac_positives = []
+for i in range(len(bins)-1):
+    mask = (bin_indices == i)
+    if np.sum(mask) > 0:
+        frac_positives.append(np.mean(y_test[mask]))
+    else:
+        frac_positives.append(0)
+
+bin_centers = (bins[:-1] + bins[1:]) / 2
+
+plt.figure(figsize=(8, 6))
+plt.plot(bin_centers, frac_positives, 'o-', linewidth=2, label='Model')
+plt.plot([0, 1], [0, 1], 'r--', linewidth=2, label='Perfect calibration')
+plt.xlabel('Mean Predicted Probability')
+plt.ylabel('Fraction of Positives')
+plt.title('Calibration Curve')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig('calibration_curve.png')
+plt.show()
+print("✅ Calibration curve saved as 'calibration_curve.png'")
+
+# 10. Multi-class Logistic Regression
+print("\n8. MULTI-CLASS LOGISTIC REGRESSION:")
+
+from sklearn.datasets import load_iris
+from sklearn.multiclass import OneVsRestClassifier
+
+# Load iris dataset
+iris = load_iris()
+X_iris, y_iris = iris.data, iris.target
+
+print(f"Iris dataset shape: {X_iris.shape}")
+print(f"Classes: {iris.target_names}")
+
+# Split and train
+X_train_i, X_test_i, y_train_i, y_test_i = train_test_split(
+    X_iris, y_iris, test_size=0.2, random_state=42, stratify=y_iris
+)
+
+# One-vs-Rest Logistic Regression
+ovr_log_reg = OneVsRestClassifier(LogisticRegression(max_iter=1000))
+ovr_log_reg.fit(X_train_i, y_train_i)
+
+# Predict and evaluate
+y_pred_i = ovr_log_reg.predict(X_test_i)
+accuracy_i = accuracy_score(y_test_i, y_pred_i)
+print(f"\nMulti-class accuracy: {accuracy_i:.4f}")
+
+print("\nClassification Report:")
+print(classification_report(y_test_i, y_pred_i, target_names=iris.target_names))
+
+# Confusion matrix for multi-class
+cm_i = confusion_matrix(y_test_i, y_pred_i)
+plt.figure(figsize=(8, 6))
+sns.heatmap(cm_i, annot=True, fmt='d', cmap='Blues',
+            xticklabels=iris.target_names,
+            yticklabels=iris.target_names)
+plt.title('Multi-class Confusion Matrix')
+plt.ylabel('True Label')
+plt.xlabel('Predicted Label')
+plt.savefig('multiclass_cm.png')
+plt.show()
+print("✅ Multi-class confusion matrix saved as 'multiclass_cm.png'")
+
