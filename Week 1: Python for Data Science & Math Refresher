@@ -663,3 +663,190 @@ p_disease_given_positive = (p_positive_given_disease * p_disease) / p_positive
 
 print(f"\nBayes' Theorem Example:")
 print(f"P(disease|positive) = {p_disease_given_positive:.4f}")
+
+📝 Weekly Project: Exploratory Data Analysis (EDA)
+# week1_project.py
+"""
+WEEK 1 PROJECT: Exploratory Data Analysis on Titanic Dataset
+"""
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("WEEK 1 PROJECT: EXPLORATORY DATA ANALYSIS")
+print("="*70)
+
+# 1. Load the data
+print("\n1. LOADING DATA:")
+# Using Seaborn's built-in Titanic dataset
+df = sns.load_dataset('titanic')
+print(f"Dataset shape: {df.shape}")
+print(f"Columns: {df.columns.tolist()}")
+
+# 2. Initial Data Inspection
+print("\n2. INITIAL DATA INSPECTION:")
+print("\nFirst 5 rows:")
+print(df.head())
+
+print("\nData Info:")
+print(df.info())
+
+print("\nBasic Statistics:")
+print(df.describe(include='all'))
+
+# 3. Missing Values Analysis
+print("\n3. MISSING VALUES ANALYSIS:")
+missing = df.isnull().sum()
+missing_pct = (missing / len(df)) * 100
+missing_df = pd.DataFrame({
+    'Missing Count': missing,
+    'Missing %': missing_pct
+})
+print(missing_df[missing_df['Missing Count'] > 0].sort_values('Missing %', ascending=False))
+
+# 4. Univariate Analysis
+print("\n4. UNIVARIATE ANALYSIS:")
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+# Age distribution
+axes[0, 0].hist(df['age'].dropna(), bins=30, edgecolor='black', alpha=0.7)
+axes[0, 0].set_title('Age Distribution')
+axes[0, 0].set_xlabel('Age')
+axes[0, 0].set_ylabel('Frequency')
+
+# Fare distribution
+axes[0, 1].hist(df['fare'], bins=30, edgecolor='black', alpha=0.7, color='green')
+axes[0, 1].set_title('Fare Distribution')
+axes[0, 1].set_xlabel('Fare')
+axes[0, 1].set_ylabel('Frequency')
+
+# Survival count
+survival_counts = df['survived'].value_counts()
+axes[0, 2].bar(['Died', 'Survived'], survival_counts.values, color=['red', 'green'], edgecolor='black')
+axes[0, 2].set_title('Survival Count')
+axes[0, 2].set_ylabel('Count')
+for i, v in enumerate(survival_counts.values):
+    axes[0, 2].text(i, v + 5, str(v), ha='center')
+
+# Pclass distribution
+pclass_counts = df['pclass'].value_counts().sort_index()
+axes[1, 0].bar(['1st', '2nd', '3rd'], pclass_counts.values, color='skyblue', edgecolor='black')
+axes[1, 0].set_title('Passenger Class Distribution')
+axes[1, 0].set_ylabel('Count')
+
+# Sex distribution
+sex_counts = df['sex'].value_counts()
+axes[1, 1].bar(['Male', 'Female'], sex_counts.values, color=['blue', 'pink'], edgecolor='black')
+axes[1, 1].set_title('Gender Distribution')
+axes[1, 1].set_ylabel('Count')
+
+# Embarked distribution
+embarked_counts = df['embarked'].value_counts()
+axes[1, 2].bar(embarked_counts.index, embarked_counts.values, color='orange', edgecolor='black')
+axes[1, 2].set_title('Embarkation Port Distribution')
+axes[1, 2].set_ylabel('Count')
+
+plt.tight_layout()
+plt.savefig('univariate_analysis.png', dpi=100, bbox_inches='tight')
+plt.show()
+print("✅ Univariate analysis plot saved as 'univariate_analysis.png'")
+
+# 5. Bivariate Analysis
+print("\n5. BIVARIATE ANALYSIS:")
+
+# Survival by gender
+survival_by_sex = pd.crosstab(df['sex'], df['survived'])
+print("\nSurvival by Gender:")
+print(survival_by_sex)
+
+# Survival by class
+survival_by_class = pd.crosstab(df['pclass'], df['survived'])
+print("\nSurvival by Passenger Class:")
+print(survival_by_class)
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 12))
+
+# Age vs Survival
+axes[0, 0].boxplot([df[df['survived']==0]['age'].dropna(),
+                   df[df['survived']==1]['age'].dropna()],
+                   labels=['Died', 'Survived'])
+axes[0, 0].set_title('Age Distribution by Survival')
+axes[0, 0].set_ylabel('Age')
+
+# Fare vs Survival
+axes[0, 1].boxplot([df[df['survived']==0]['fare'],
+                   df[df['survived']==1]['fare']],
+                   labels=['Died', 'Survived'])
+axes[0, 1].set_title('Fare Distribution by Survival')
+axes[0, 1].set_ylabel('Fare')
+
+# Survival by class (stacked bar)
+survival_by_class.T.plot(kind='bar', stacked=True, ax=axes[1, 0])
+axes[1, 0].set_title('Survival by Passenger Class')
+axes[1, 0].set_xlabel('Survived')
+axes[1, 0].set_ylabel('Count')
+axes[1, 0].legend(title='Class')
+
+# Correlation heatmap
+numeric_cols = df.select_dtypes(include=[np.number]).columns
+corr = df[numeric_cols].corr()
+sns.heatmap(corr, annot=True, cmap='coolwarm', center=0, ax=axes[1, 1],
+            square=True, linewidths=1, cbar_kws={"shrink": 0.8})
+axes[1, 1].set_title('Correlation Heatmap')
+
+plt.tight_layout()
+plt.savefig('bivariate_analysis.png', dpi=100, bbox_inches='tight')
+plt.show()
+print("✅ Bivariate analysis plot saved as 'bivariate_analysis.png'")
+
+# 6. Advanced Visualizations
+print("\n6. ADVANCED VISUALIZATIONS:")
+fig, axes = plt.subplots(2, 2, figsize=(14, 12))
+
+# Age distribution by class and survival
+for ax, pclass in zip(axes.flatten(), [1, 2, 3]):
+    data = df[df['pclass'] == pclass]
+    sns.histplot(data=data, x='age', hue='survived', multiple='stack',
+                 bins=20, ax=ax, palette=['red', 'green'])
+    ax.set_title(f'Class {pclass} - Age Distribution by Survival')
+    ax.set_xlabel('Age')
+    ax.set_ylabel('Count')
+    ax.legend(['Died', 'Survived'])
+
+plt.tight_layout()
+plt.savefig('advanced_analysis.png', dpi=100, bbox_inches='tight')
+plt.show()
+print("✅ Advanced analysis plot saved as 'advanced_analysis.png'")
+
+# 7. Key Insights
+print("\n7. KEY INSIGHTS:")
+print("\n📊 Summary Statistics:")
+print(f"  - Total passengers: {len(df)}")
+print(f"  - Survival rate: {df['survived'].mean()*100:.1f}%")
+print(f"  - Average age: {df['age'].mean():.1f} years")
+print(f"  - Average fare: ${df['fare'].mean():.2f}")
+
+print("\n🔍 Key Findings:")
+print("  1. Women had much higher survival rate than men")
+print("  2. 1st class passengers survived at higher rates than 3rd class")
+print("  3. Children (age < 16) had higher survival rates")
+print("  4. Passengers who paid higher fares had better survival odds")
+print("  5. Most passengers were from 3rd class (55%)")
+
+# 8. Data Cleaning Summary
+print("\n8. DATA CLEANING RECOMMENDATIONS:")
+print("  - Age has 177 missing values (fill with median)")
+print("  - Embarked has 2 missing values (fill with mode)")
+print("  - Deck has many missing values (consider dropping)")
+print("  - Create feature: FamilySize = SibSp + Parch + 1")
+print("  - Create feature: IsAlone (FamilySize == 1)")
+print("  - Bin Age into categories (Child, Adult, Senior)")
+
+print("\n✅ Project completed successfully!")
+
+
