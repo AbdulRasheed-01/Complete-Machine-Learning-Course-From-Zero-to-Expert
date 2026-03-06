@@ -872,3 +872,17 @@ Matplotlib	|          plt.plot(), plt.hist()	       |      Basic plotting
 
 Seaborn	   |          sns.heatmap(), sns.pairplot() |	     Statistical plots
 
+Next Week Preview
+Week 2: Core Machine Learning Algorithms
+
+Linear Regression
+
+Logistic Regression
+
+K-Nearest Neighbors
+
+Train/Test Split
+
+Model Evaluation Metrics
+
+
