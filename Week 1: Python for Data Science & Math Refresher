@@ -58,4 +58,116 @@ print(f"NumPy version: {np.__version__}")
 print(f"Pandas version: {pd.__version__}")
 print("Setup successful!")
 
+1.2 NumPy Fundamentals
+
+NumPy provides the mathematical foundation with efficient array operations 
+
+# numpy_basics.py
+import numpy as np
+
+print("="*60)
+print("NUMPY FUNDAMENTALS")
+print("="*60)
+
+# 1. Creating Arrays
+print("\n1. CREATING ARRAYS:")
+arr1 = np.array([1, 2, 3, 4, 5])
+print(f"1D array: {arr1}")
+
+arr2 = np.array([[1, 2, 3], [4, 5, 6]])
+print(f"2D array:\n{arr2}")
+
+# Special arrays
+zeros = np.zeros((3, 4))
+print(f"\nZeros array:\n{zeros}")
+
+ones = np.ones((2, 3))
+print(f"Ones array:\n{ones}")
+
+range_arr = np.arange(0, 10, 2)  # start, stop, step
+print(f"Range array: {range_arr}")
+
+linspace_arr = np.linspace(0, 1, 5)  # 5 points between 0 and 1
+print(f"Linspace array: {linspace_arr}")
+
+random_arr = np.random.randn(3, 3)  # random normal distribution
+print(f"\nRandom normal array:\n{random_arr}")
+
+# 2. Array Attributes
+print("\n2. ARRAY ATTRIBUTES:")
+print(f"Shape: {arr2.shape}")
+print(f"Dimensions: {arr2.ndim}")
+print(f"Size: {arr2.size}")
+print(f"Data type: {arr2.dtype}")
+
+# 3. Indexing and Slicing
+print("\n3. INDEXING AND SLICING:")
+arr = np.arange(10)
+print(f"Original: {arr}")
+print(f"First 3: {arr[:3]}")
+print(f"Last 3: {arr[-3:]}")
+print(f"Elements 2-5: {arr[2:6]}")
+print(f"Every other: {arr[::2]}")
+
+# 2D indexing
+matrix = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+print(f"\nMatrix:\n{matrix}")
+print(f"Element at [1,2]: {matrix[1, 2]}")
+print(f"First row: {matrix[0, :]}")
+print(f"Second column: {matrix[:, 1]}")
+
+# 4. Array Operations
+print("\n4. ARRAY OPERATIONS:")
+a = np.array([1, 2, 3])
+b = np.array([4, 5, 6])
+
+print(f"a + b = {a + b}")
+print(f"a * b = {a * b}")
+print(f"a ** 2 = {a ** 2}")
+print(f"sin(a) = {np.sin(a)}")
+
+# Broadcasting
+c = np.array([[1, 2, 3], [4, 5, 6]])
+d = np.array([10, 20, 30])
+print(f"\nBroadcasting:\n{c + d}")
+
+# 5. Linear Algebra Operations
+print("\n5. LINEAR ALGEBRA:")
+A = np.array([[1, 2], [3, 4]])
+B = np.array([[5, 6], [7, 8]])
+
+print(f"Matrix A:\n{A}")
+print(f"Matrix B:\n{B}")
+print(f"Matrix multiplication A @ B:\n{A @ B}")
+print(f"Matrix dot product: {np.dot(A, B)}")
+print(f"Transpose of A:\n{A.T}")
+print(f"Determinant of A: {np.linalg.det(A)}")
+print(f"Inverse of A:\n{np.linalg.inv(A)}")
+
+# 6. Statistical Operations
+print("\n6. STATISTICAL OPERATIONS:")
+data = np.random.randn(1000)
+print(f"Mean: {np.mean(data):.4f}")
+print(f"Median: {np.median(data):.4f}")
+print(f"Std Dev: {np.std(data):.4f}")
+print(f"Variance: {np.var(data):.4f}")
+print(f"Min: {np.min(data):.4f}")
+print(f"Max: {np.max(data):.4f}")
+
+# 7. Reshaping and Manipulation
+print("\n7. RESHAPING:")
+arr = np.arange(12)
+print(f"Original: {arr}")
+print(f"Reshaped (3,4):\n{arr.reshape(3, 4)}")
+print(f"Reshaped (2,6):\n{arr.reshape(2, 6)}")
+print(f"Flattened: {arr.reshape(3, 4).flatten()}")
+
+# 8. Boolean Masking
+print("\n8. BOOLEAN MASKING:")
+arr = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+mask = arr > 5
+print(f"Array: {arr}")
+print(f"Mask (arr > 5): {mask}")
+print(f"Filtered values: {arr[mask]}")
+print(f"Values where arr % 2 == 0: {arr[arr % 2 == 0]}")
 
