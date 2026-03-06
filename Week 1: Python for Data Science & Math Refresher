@@ -372,3 +372,174 @@ print(df_dates)
 
 Visualization helps uncover patterns, trends, and correlations in data 
 
+# visualization.py
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import pandas as pd
+
+# Set style
+plt.style.use('seaborn-v0_8-darkgrid')
+sns.set_palette("husl")
+
+print("="*60)
+print("DATA VISUALIZATION")
+print("="*60)
+
+# 1. Basic Matplotlib Plots
+print("\n1. BASIC MATPLOTLIB PLOTS:")
+
+# Line plot
+x = np.linspace(0, 10, 100)
+y1 = np.sin(x)
+y2 = np.cos(x)
+
+plt.figure(figsize=(10, 6))
+plt.plot(x, y1, label='sin(x)', linewidth=2)
+plt.plot(x, y2, label='cos(x)', linewidth=2)
+plt.xlabel('x')
+plt.ylabel('y')
+plt.title('Sine and Cosine Functions')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig('line_plot.png', dpi=100)
+plt.show()
+print("✅ Line plot saved as 'line_plot.png'")
+
+# Scatter plot
+np.random.seed(42)
+x_scatter = np.random.randn(100)
+y_scatter = 2 * x_scatter + np.random.randn(100) * 0.5
+
+plt.figure(figsize=(8, 6))
+plt.scatter(x_scatter, y_scatter, alpha=0.6, edgecolors='black', linewidth=0.5)
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.title('Scatter Plot with Linear Relationship')
+plt.grid(True, alpha=0.3)
+plt.savefig('scatter_plot.png')
+plt.show()
+print("✅ Scatter plot saved as 'scatter_plot.png'")
+
+# Histogram
+data_hist = np.random.randn(1000)
+
+plt.figure(figsize=(10, 6))
+plt.hist(data_hist, bins=30, alpha=0.7, color='steelblue', edgecolor='black')
+plt.xlabel('Value')
+plt.ylabel('Frequency')
+plt.title('Histogram of Random Normal Data')
+plt.grid(True, alpha=0.3)
+plt.savefig('histogram.png')
+plt.show()
+print("✅ Histogram saved as 'histogram.png'")
+
+# Bar plot
+categories = ['A', 'B', 'C', 'D', 'E']
+values = [23, 45, 56, 78, 33]
+
+plt.figure(figsize=(8, 6))
+plt.bar(categories, values, color='coral', edgecolor='black')
+plt.xlabel('Category')
+plt.ylabel('Value')
+plt.title('Bar Plot Example')
+plt.grid(True, alpha=0.3, axis='y')
+plt.savefig('bar_plot.png')
+plt.show()
+print("✅ Bar plot saved as 'bar_plot.png'")
+
+# 2. Seaborn Statistical Plots
+print("\n2. SEABORN STATISTICAL PLOTS:")
+
+# Create sample dataset
+np.random.seed(42)
+data = pd.DataFrame({
+    'total_bill': np.random.uniform(10, 50, 200),
+    'tip': np.random.uniform(2, 10, 200),
+    'sex': np.random.choice(['Male', 'Female'], 200),
+    'day': np.random.choice(['Thur', 'Fri', 'Sat', 'Sun'], 200),
+    'time': np.random.choice(['Lunch', 'Dinner'], 200),
+    'size': np.random.randint(1, 6, 200)
+})
+
+# Add some correlation
+data['tip'] = data['total_bill'] * 0.15 + np.random.randn(200) * 2
+data['tip'] = data['tip'].clip(lower=1)
+
+# Pairplot
+print("\nCreating pairplot (this may take a moment)...")
+sns.pairplot(data[['total_bill', 'tip', 'size']])
+plt.savefig('pairplot.png')
+plt.show()
+print("✅ Pairplot saved as 'pairplot.png'")
+
+# Heatmap (correlation)
+plt.figure(figsize=(8, 6))
+correlation = data[['total_bill', 'tip', 'size']].corr()
+sns.heatmap(correlation, annot=True, cmap='coolwarm', center=0,
+            square=True, linewidths=1, cbar_kws={"shrink": 0.8})
+plt.title('Correlation Heatmap')
+plt.savefig('heatmap.png')
+plt.show()
+print("✅ Heatmap saved as 'heatmap.png'")
+
+# Box plot
+plt.figure(figsize=(10, 6))
+sns.boxplot(x='day', y='total_bill', data=data, palette='Set2')
+plt.title('Total Bill Distribution by Day')
+plt.savefig('boxplot.png')
+plt.show()
+print("✅ Box plot saved as 'boxplot.png'")
+
+# Violin plot
+plt.figure(figsize=(10, 6))
+sns.violinplot(x='day', y='tip', data=data, palette='muted')
+plt.title('Tip Distribution by Day')
+plt.savefig('violinplot.png')
+plt.show()
+print("✅ Violin plot saved as 'violinplot.png'")
+
+# Count plot
+plt.figure(figsize=(8, 6))
+sns.countplot(x='day', data=data, palette='pastel')
+plt.title('Number of Transactions by Day')
+plt.savefig('countplot.png')
+plt.show()
+print("✅ Count plot saved as 'countplot.png'")
+
+# 3. Advanced Visualizations
+print("\n3. ADVANCED VISUALIZATIONS:")
+
+# Subplots
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+
+# Top-left: Scatter
+axes[0, 0].scatter(data['total_bill'], data['tip'], alpha=0.6)
+axes[0, 0].set_xlabel('Total Bill')
+axes[0, 0].set_ylabel('Tip')
+axes[0, 0].set_title('Tip vs Total Bill')
+
+# Top-right: Histogram
+axes[0, 1].hist(data['total_bill'], bins=20, color='green', alpha=0.7)
+axes[0, 1].set_xlabel('Total Bill')
+axes[0, 1].set_ylabel('Frequency')
+axes[0, 1].set_title('Total Bill Distribution')
+
+# Bottom-left: Box plot
+data.boxplot(column='tip', by='sex', ax=axes[1, 0])
+axes[1, 0].set_title('Tip by Gender')
+
+# Bottom-right: Bar plot
+means = data.groupby('day')['total_bill'].mean()
+axes[1, 1].bar(means.index, means.values, color='orange')
+axes[1, 1].set_xlabel('Day')
+axes[1, 1].set_ylabel('Average Total Bill')
+axes[1, 1].set_title('Average Bill by Day')
+
+plt.tight_layout()
+plt.savefig('multi_panel.png')
+plt.show()
+print("✅ Multi-panel plot saved as 'multi_panel.png'")
+
+print("\n✅ All visualizations created successfully!")
+
