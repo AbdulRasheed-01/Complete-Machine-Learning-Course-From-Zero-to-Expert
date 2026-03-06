@@ -473,3 +473,4 @@ plt.savefig('multiclass_cm.png')
 plt.show()
 print("✅ Multi-class confusion matrix saved as 'multiclass_cm.png'")
 
+Exercise 3: K-Nearest Neighbors (KNN)
