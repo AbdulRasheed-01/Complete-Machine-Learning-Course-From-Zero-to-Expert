@@ -1483,7 +1483,31 @@ print("✅ PROJECT COMPLETED SUCCESSFULLY!")
 print("="*70)
 📊 Week 3 Quiz
 
+# week3_quiz.py
+"""
+Week 3 Quiz - Test your knowledge of Advanced Algorithms
+"""
 
+def quiz():
+    score = 0
+    total = 10
+    
+    print("\n" + "="*50)
+    print("WEEK 3 QUIZ - Advanced Algorithms & Model Evaluation")
+    print("="*50)
+    
+    # Question 1
+    print("\n1. What is the main advantage of Random Forest over a single Decision Tree?")
+    print("   a) Faster training time")
+    print("   b) Reduced overfitting through ensemble averaging")
+    print("   c) Requires less memory")
+    print("   d) Always has higher accuracy")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Random Forest reduces overfitting by averaging multiple trees")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Random Forest reduces variance through bagging")
 
 
 
