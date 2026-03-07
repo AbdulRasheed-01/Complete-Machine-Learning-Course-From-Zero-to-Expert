@@ -1608,9 +1608,35 @@ def quiz():
     else:
         print("   ❌ Incorrect. PR curves focus on the positive class")
 
+# Question 10
+    print("\n10. What is the purpose of out-of-bag (OOB) score in Random Forest?")
+    print("    a) To measure training time")
+    print("    b) To get an unbiased estimate of performance without validation set")
+    print("    c) To determine feature importance")
+    print("    d) To select the number of trees")
+    answer = input("    Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("    ✅ Correct! OOB provides built-in validation")
+        score += 1
+    else:
+        print("    ❌ Incorrect. OOB uses samples not used in each tree's bootstrap")
 
+# Final score
+    print("\n" + "="*50)
+    print(f"QUIZ COMPLETE! Your score: {score}/{total}")
+    print("="*50)
+    
+    if score == total:
+        print("🏆 Perfect! You're mastering advanced ML algorithms!")
+    elif score >= 8:
+        print("🌟 Great job! You have a solid understanding!")
+    elif score >= 6:
+        print("📚 Good effort! Review the topics you missed.")
+    else:
+        print("💪 Keep practicing! These concepts take time to master.")
 
-
+if __name__ == "__main__":
+    quiz()
 
 
 
