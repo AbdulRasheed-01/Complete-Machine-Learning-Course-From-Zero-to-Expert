@@ -1533,6 +1533,18 @@ def quiz():
     else:
         print("   ❌ Incorrect. C is the penalty parameter for errors")
 
+# Question 4
+    print("\n4. In an imbalanced dataset, why is accuracy not a good metric?")
+    print("   a) It's too difficult to calculate")
+    print("   b) A model predicting only the majority class can have high accuracy")
+    print("   c) It doesn't work with probabilities")
+    print("   d) It requires too much data")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Accuracy can be misleading with imbalance")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Always predict majority gives high accuracy but useless model")
 
 
 
