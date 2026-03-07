@@ -801,4 +801,268 @@ plt.ylabel('True')
 plt.savefig('svm_multiclass_cm.png')
 plt.show()
 print("✅ Multi-class confusion matrix saved as 'svm_multiclass_cm.png'")
+Exercise 4: Handling Imbalanced Data
+
+# imbalanced_data.py
+"""
+Techniques for handling imbalanced datasets
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import (accuracy_score, precision_score, recall_score, f1_score,
+                             confusion_matrix, classification_report, roc_curve, auc)
+from sklearn.utils import class_weight
+from imblearn.over_sampling import SMOTE, RandomOverSampler
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.combine import SMOTETomek
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("HANDLING IMBALANCED DATA")
+print("="*60)
+
+# 1. Create imbalanced dataset
+print("\n1. CREATING IMBALANCED DATASET:")
+
+X, y = make_classification(
+    n_samples=10000,
+    n_features=20,
+    n_informative=10,
+    n_redundant=5,
+    n_classes=2,
+    weights=[0.95, 0.05],  # 95% class 0, 5% class 1
+    random_state=42
+)
+
+print(f"Dataset shape: {X.shape}")
+print(f"Class distribution:")
+unique, counts = np.unique(y, return_counts=True)
+for cls, count in zip(unique, counts):
+    print(f"  Class {cls}: {count} ({count/len(y)*100:.2f}%)")
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# 2. Baseline model (no handling)
+print("\n2. BASELINE MODEL (NO HANDLING):")
+
+rf_baseline = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_baseline.fit(X_train, y_train)
+y_pred_baseline = rf_baseline.predict(X_test)
+
+print("\nMetrics:")
+print(f"  Accuracy:  {accuracy_score(y_test, y_pred_baseline):.4f}")
+print(f"  Precision: {precision_score(y_test, y_pred_baseline):.4f}")
+print(f"  Recall:    {recall_score(y_test, y_pred_baseline):.4f}")
+print(f"  F1-Score:  {f1_score(y_test, y_pred_baseline):.4f}")
+
+# Confusion matrix
+cm_baseline = confusion_matrix(y_test, y_pred_baseline)
+print("\nConfusion Matrix:")
+print(cm_baseline)
+
+# 3. Class weight adjustment
+print("\n3. CLASS WEIGHT ADJUSTMENT:")
+
+# Compute class weights
+weights = class_weight.compute_class_weight('balanced', classes=np.unique(y_train), y=y_train)
+class_weight_dict = {0: weights[0], 1: weights[1]}
+print(f"Class weights: {class_weight_dict}")
+
+rf_weighted = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42)
+rf_weighted.fit(X_train, y_train)
+y_pred_weighted = rf_weighted.predict(X_test)
+
+print("\nMetrics with class weights:")
+print(f"  Accuracy:  {accuracy_score(y_test, y_pred_weighted):.4f}")
+print(f"  Precision: {precision_score(y_test, y_pred_weighted):.4f}")
+print(f"  Recall:    {recall_score(y_test, y_pred_weighted):.4f}")
+print(f"  F1-Score:  {f1_score(y_test, y_pred_weighted):.4f}")
+
+# 4. Random Oversampling
+print("\n4. RANDOM OVERSAMPLING:")
+
+ros = RandomOverSampler(random_state=42)
+X_train_ros, y_train_ros = ros.fit_resample(X_train, y_train)
+
+print(f"Original training set shape: {X_train.shape}")
+print(f"Resampled training set shape: {X_train_ros.shape}")
+print(f"New class distribution: {np.bincount(y_train_ros)}")
+
+rf_ros = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_ros.fit(X_train_ros, y_train_ros)
+y_pred_ros = rf_ros.predict(X_test)
+
+print("\nMetrics with Random Oversampling:")
+print(f"  Accuracy:  {accuracy_score(y_test, y_pred_ros):.4f}")
+print(f"  Precision: {precision_score(y_test, y_pred_ros):.4f}")
+print(f"  Recall:    {recall_score(y_test, y_pred_ros):.4f}")
+print(f"  F1-Score:  {f1_score(y_test, y_pred_ros):.4f}")
+
+# 5. SMOTE (Synthetic Minority Oversampling Technique)
+print("\n5. SMOTE:")
+
+smote = SMOTE(random_state=42)
+X_train_smote, y_train_smote = smote.fit_resample(X_train, y_train)
+
+print(f"Original training set shape: {X_train.shape}")
+print(f"SMOTE resampled shape: {X_train_smote.shape}")
+print(f"New class distribution: {np.bincount(y_train_smote)}")
+
+rf_smote = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_smote.fit(X_train_smote, y_train_smote)
+y_pred_smote = rf_smote.predict(X_test)
+
+print("\nMetrics with SMOTE:")
+print(f"  Accuracy:  {accuracy_score(y_test, y_pred_smote):.4f}")
+print(f"  Precision: {precision_score(y_test, y_pred_smote):.4f}")
+print(f"  Recall:    {recall_score(y_test, y_pred_smote):.4f}")
+print(f"  F1-Score:  {f1_score(y_test, y_pred_smote):.4f}")
+
+# 6. Random Undersampling
+print("\n6. RANDOM UNDERSAMPLING:")
+
+rus = RandomUnderSampler(random_state=42)
+X_train_rus, y_train_rus = rus.fit_resample(X_train, y_train)
+
+print(f"Original training set shape: {X_train.shape}")
+print(f"Undersampled shape: {X_train_rus.shape}")
+print(f"New class distribution: {np.bincount(y_train_rus)}")
+
+rf_rus = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_rus.fit(X_train_rus, y_train_rus)
+y_pred_rus = rf_rus.predict(X_test)
+
+print("\nMetrics with Random Undersampling:")
+print(f"  Accuracy:  {accuracy_score(y_test, y_pred_rus):.4f}")
+print(f"  Precision: {precision_score(y_test, y_pred_rus):.4f}")
+print(f"  Recall:    {recall_score(y_test, y_pred_rus):.4f}")
+print(f"  F1-Score:  {f1_score(y_test, y_pred_rus):.4f}")
+
+# 7. SMOTE + Tomek Links (Combined approach)
+print("\n7. SMOTE + TOMEK LINKS:")
+
+smote_tomek = SMOTETomek(random_state=42)
+X_train_st, y_train_st = smote_tomek.fit_resample(X_train, y_train)
+
+print(f"Original training set shape: {X_train.shape}")
+print(f"SMOTE-Tomek shape: {X_train_st.shape}")
+print(f"New class distribution: {np.bincount(y_train_st)}")
+
+rf_st = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_st.fit(X_train_st, y_train_st)
+y_pred_st = rf_st.predict(X_test)
+
+print("\nMetrics with SMOTE-Tomek:")
+print(f"  Accuracy:  {accuracy_score(y_test, y_pred_st):.4f}")
+print(f"  Precision: {precision_score(y_test, y_pred_st):.4f}")
+print(f"  Recall:    {recall_score(y_test, y_pred_st):.4f}")
+print(f"  F1-Score:  {f1_score(y_test, y_pred_st):.4f}")
+
+# 8. Compare all methods
+print("\n8. COMPARISON OF ALL METHODS:")
+
+methods = {
+    'Baseline': y_pred_baseline,
+    'Class Weight': y_pred_weighted,
+    'Random Oversampling': y_pred_ros,
+    'SMOTE': y_pred_smote,
+    'Random Undersampling': y_pred_rus,
+    'SMOTE-Tomek': y_pred_st
+}
+
+results = []
+for name, y_pred in methods.items():
+    results.append({
+        'Method': name,
+        'Accuracy': accuracy_score(y_test, y_pred),
+        'Precision': precision_score(y_test, y_pred),
+        'Recall': recall_score(y_test, y_pred),
+        'F1-Score': f1_score(y_test, y_pred)
+    })
+
+results_df = pd.DataFrame(results)
+print("\n" + "="*80)
+print(results_df.to_string(index=False))
+print("="*80)
+
+# 9. ROC Curves comparison
+print("\n9. ROC CURVES COMPARISON:")
+
+plt.figure(figsize=(12, 8))
+colors = ['blue', 'green', 'red', 'orange', 'purple', 'brown']
+
+for (name, y_pred), color in zip(methods.items(), colors):
+    fpr, tpr, _ = roc_curve(y_test, y_pred)
+    roc_auc = auc(fpr, tpr)
+    plt.plot(fpr, tpr, color=color, lw=2, label=f'{name} (AUC = {roc_auc:.3f})')
+
+plt.plot([0, 1], [0, 1], 'k--', lw=2, label='Random')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curves - Different Imbalance Handling Methods')
+plt.legend(loc='lower right')
+plt.grid(True, alpha=0.3)
+plt.savefig('imbalance_roc_comparison.png')
+plt.show()
+print("✅ ROC comparison saved as 'imbalance_roc_comparison.png'")
+
+# 10. Visualize the effect of SMOTE
+print("\n10. VISUALIZING SMOTE EFFECT (2D projection):")
+
+# Create a simple 2D imbalanced dataset for visualization
+X_viz, y_viz = make_classification(
+    n_samples=1000, n_features=2, n_redundant=0, n_clusters_per_class=1,
+    weights=[0.9, 0.1], random_state=42
+)
+
+X_train_v, X_test_v, y_train_v, y_test_v = train_test_split(
+    X_viz, y_viz, test_size=0.2, random_state=42, stratify=y_viz
+)
+
+# Apply SMOTE
+smote_viz = SMOTE(random_state=42)
+X_train_smote_v, y_train_smote_v = smote_viz.fit_resample(X_train_v, y_train_v)
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+# Original data
+axes[0].scatter(X_train_v[y_train_v==0, 0], X_train_v[y_train_v==0, 1],
+                c='blue', label='Majority Class', alpha=0.6, edgecolors='black')
+axes[0].scatter(X_train_v[y_train_v==1, 0], X_train_v[y_train_v==1, 1],
+                c='red', label='Minority Class', alpha=0.8, edgecolors='black', s=50)
+axes[0].set_title(f'Original Training Data (Minority: {sum(y_train_v==1)})')
+axes[0].set_xlabel('Feature 1')
+axes[0].set_ylabel('Feature 2')
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+# SMOTE data
+axes[1].scatter(X_train_smote_v[y_train_smote_v==0, 0], X_train_smote_v[y_train_smote_v==0, 1],
+                c='blue', label='Majority Class', alpha=0.6, edgecolors='black')
+axes[1].scatter(X_train_smote_v[y_train_smote_v==1, 0], X_train_smote_v[y_train_smote_v==1, 1],
+                c='red', label='Minority Class (Synthetic)', alpha=0.8, edgecolors='black', s=50)
+axes[1].set_title(f'After SMOTE (Minority: {sum(y_train_smote_v==1)})')
+axes[1].set_xlabel('Feature 1')
+axes[1].set_ylabel('Feature 2')
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('smote_visualization.png')
+plt.show()
+print("✅ SMOTE visualization saved as 'smote_visualization.png'")
+
+print("\n✅ Imbalanced data handling completed!")
 
