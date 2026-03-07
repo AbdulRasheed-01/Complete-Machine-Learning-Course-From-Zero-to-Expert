@@ -31,3 +31,286 @@ Polynomial	    |    $K(x,y) = (γx^T y + r)^d$	    |      Polynomial boundaries
 RBF (Gaussian)	|    $K(x,y) = exp(-γ|x-y|^2)$	    |      Most common, flexible
 
 Sigmoid	        |    $K(x,y) = tanh(γx^T y + r)$	  |      Neural network-like
+
+🔧 Practical Exercises
+
+Exercise 1: Decision Trees from Scratch and with scikit-learn
+
+# decision_trees.py
+"""
+Decision Trees for classification and regression
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import make_classification, load_iris, make_regression
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor, plot_tree
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.tree import export_text
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("DECISION TREES")
+print("="*60)
+
+# 1. Simple Decision Tree for Classification
+print("\n1. DECISION TREE CLASSIFICATION:")
+
+# Load iris dataset
+iris = load_iris()
+X, y = iris.data, iris.target
+feature_names = iris.feature_names
+target_names = iris.target_names
+
+print(f"Dataset shape: {X.shape}")
+print(f"Features: {feature_names}")
+print(f"Classes: {target_names}")
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# Train decision tree
+dt_classifier = DecisionTreeClassifier(max_depth=3, random_state=42)
+dt_classifier.fit(X_train, y_train)
+
+# Predictions
+y_pred = dt_classifier.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print(f"\nAccuracy: {accuracy:.4f}")
+
+# 2. Visualize the tree
+print("\n2. VISUALIZING DECISION TREE:")
+
+plt.figure(figsize=(20, 10))
+plot_tree(dt_classifier, feature_names=feature_names, 
+          class_names=target_names, filled=True, rounded=True)
+plt.title("Decision Tree Classifier (Iris Dataset)")
+plt.savefig('decision_tree_iris.png', dpi=300, bbox_inches='tight')
+plt.show()
+print("✅ Decision tree visualization saved as 'decision_tree_iris.png'")
+
+# Print tree as text
+tree_rules = export_text(dt_classifier, feature_names=feature_names)
+print("\nDecision Tree Rules:")
+print(tree_rules)
+
+# 3. Feature Importance
+print("\n3. FEATURE IMPORTANCE:")
+
+importance = dt_classifier.feature_importances_
+feature_importance = pd.DataFrame({
+    'feature': feature_names,
+    'importance': importance
+}).sort_values('importance', ascending=False)
+
+print(feature_importance)
+
+plt.figure(figsize=(10, 6))
+plt.barh(feature_importance['feature'], feature_importance['importance'])
+plt.xlabel('Importance')
+plt.title('Feature Importance - Decision Tree')
+plt.grid(True, alpha=0.3, axis='x')
+plt.savefig('dt_feature_importance.png')
+plt.show()
+print("✅ Feature importance saved as 'dt_feature_importance.png'")
+
+# 4. Decision Tree for Regression
+print("\n4. DECISION TREE REGRESSION:")
+
+# Generate regression data
+X_reg, y_reg = make_regression(n_samples=200, n_features=1, noise=10, random_state=42)
+
+X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(
+    X_reg, y_reg, test_size=0.2, random_state=42
+)
+
+# Train regression tree
+dt_regressor = DecisionTreeRegressor(max_depth=4, random_state=42)
+dt_regressor.fit(X_train_r, y_train_r)
+
+# Predictions
+y_pred_r = dt_regressor.predict(X_test_r)
+
+# Visualize
+plt.figure(figsize=(12, 5))
+
+# Scatter plot with predictions
+plt.subplot(1, 2, 1)
+X_smooth = np.linspace(X_reg.min(), X_reg.max(), 300).reshape(-1, 1)
+y_smooth = dt_regressor.predict(X_smooth)
+
+plt.scatter(X_train_r, y_train_r, alpha=0.5, label='Training', s=30)
+plt.scatter(X_test_r, y_test_r, alpha=0.7, label='Test', s=50, c='red')
+plt.plot(X_smooth, y_smooth, 'g-', linewidth=2, label='Tree prediction')
+plt.xlabel('X')
+plt.ylabel('y')
+plt.title('Decision Tree Regression')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+# Tree structure
+plt.subplot(1, 2, 2)
+plot_tree(dt_regressor, filled=True, rounded=True, fontsize=8)
+plt.title('Regression Tree Structure')
+
+plt.tight_layout()
+plt.savefig('decision_tree_regression.png')
+plt.show()
+print("✅ Regression tree saved as 'decision_tree_regression.png'")
+
+# 5. Effect of tree depth
+print("\n5. EFFECT OF TREE DEPTH ON PERFORMANCE:")
+
+depths = range(1, 11)
+train_scores = []
+test_scores = []
+
+for depth in depths:
+    dt = DecisionTreeClassifier(max_depth=depth, random_state=42)
+    dt.fit(X_train, y_train)
+    
+    train_scores.append(dt.score(X_train, y_train))
+    test_scores.append(dt.score(X_test, y_test))
+
+plt.figure(figsize=(10, 6))
+plt.plot(depths, train_scores, 'o-', label='Training Accuracy', linewidth=2)
+plt.plot(depths, test_scores, 's-', label='Test Accuracy', linewidth=2)
+plt.xlabel('Tree Depth')
+plt.ylabel('Accuracy')
+plt.title('Effect of Tree Depth on Performance')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.xticks(depths)
+plt.savefig('tree_depth_effect.png')
+plt.show()
+print("✅ Tree depth analysis saved as 'tree_depth_effect.png'")
+
+# 6. Decision Tree from scratch (simplified)
+print("\n6. DECISION TREE FROM SCRATCH:")
+
+class SimpleDecisionTree:
+    """A very simplified decision tree implementation for learning"""
+    
+    class Node:
+        def __init__(self, feature=None, threshold=None, left=None, right=None, value=None):
+            self.feature = feature
+            self.threshold = threshold
+            self.left = left
+            self.right = right
+            self.value = value  # For leaf nodes
+    
+    def __init__(self, max_depth=3, min_samples_split=2):
+        self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.root = None
+    
+    def fit(self, X, y):
+        self.root = self._grow_tree(X, y, depth=0)
+    
+    def _gini(self, y):
+        """Calculate Gini impurity"""
+        classes = np.unique(y)
+        impurity = 1.0
+        for c in classes:
+            prob = np.sum(y == c) / len(y)
+            impurity -= prob ** 2
+        return impurity
+    
+    def _best_split(self, X, y):
+        """Find best feature and threshold to split on"""
+        best_gain = 0
+        best_feature = None
+        best_threshold = None
+        current_impurity = self._gini(y)
+        n_samples, n_features = X.shape
+        
+        for feature in range(n_features):
+            feature_values = X[:, feature]
+            unique_values = np.unique(feature_values)
+            
+            for threshold in unique_values:
+                left_mask = feature_values <= threshold
+                right_mask = ~left_mask
+                
+                if np.sum(left_mask) < self.min_samples_split or np.sum(right_mask) < self.min_samples_split:
+                    continue
+                
+                left_impurity = self._gini(y[left_mask])
+                right_impurity = self._gini(y[right_mask])
+                
+                left_weight = np.sum(left_mask) / n_samples
+                right_weight = np.sum(right_mask) / n_samples
+                
+                gain = current_impurity - (left_weight * left_impurity + right_weight * right_impurity)
+                
+                if gain > best_gain:
+                    best_gain = gain
+                    best_feature = feature
+                    best_threshold = threshold
+        
+        return best_feature, best_threshold
+    
+    def _grow_tree(self, X, y, depth):
+        """Recursively grow the tree"""
+        n_samples, n_features = X.shape
+        n_classes = len(np.unique(y))
+        
+        # Stopping criteria
+        if (depth >= self.max_depth or 
+            n_samples < self.min_samples_split or 
+            n_classes == 1):
+            leaf_value = np.bincount(y.astype(int)).argmax()
+            return self.Node(value=leaf_value)
+        
+        # Find best split
+        feature, threshold = self._best_split(X, y)
+        
+        if feature is None:
+            leaf_value = np.bincount(y.astype(int)).argmax()
+            return self.Node(value=leaf_value)
+        
+        # Split data
+        left_mask = X[:, feature] <= threshold
+        right_mask = ~left_mask
+        
+        left = self._grow_tree(X[left_mask], y[left_mask], depth + 1)
+        right = self._grow_tree(X[right_mask], y[right_mask], depth + 1)
+        
+        return self.Node(feature=feature, threshold=threshold, left=left, right=right)
+    
+    def predict_sample(self, x, node):
+        """Predict single sample"""
+        if node.value is not None:
+            return node.value
+        
+        if x[node.feature] <= node.threshold:
+            return self.predict_sample(x, node.left)
+        else:
+            return self.predict_sample(x, node.right)
+    
+    def predict(self, X):
+        return np.array([self.predict_sample(x, self.root) for x in X])
+
+# Test scratch implementation on a simple dataset
+X_simple, y_simple = make_classification(
+    n_samples=100, n_features=2, n_redundant=0, n_clusters_per_class=1,
+    random_state=42
+)
+
+X_train_s, X_test_s, y_train_s, y_test_s = train_test_split(
+    X_simple, y_simple, test_size=0.2, random_state=42
+)
+
+scratch_tree = SimpleDecisionTree(max_depth=3)
+scratch_tree.fit(X_train_s, y_train_s)
+y_pred_scratch = scratch_tree.predict(X_test_s)
+scratch_accuracy = accuracy_score(y_test_s, y_pred_scratch)
+
+print(f"Scratch implementation accuracy: {scratch_accuracy:.4f}")
+
