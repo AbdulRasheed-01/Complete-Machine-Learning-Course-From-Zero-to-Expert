@@ -1545,6 +1545,19 @@ def quiz():
         score += 1
     else:
         print("   ❌ Incorrect. Always predict majority gives high accuracy but useless model")
+# Question 5
+    print("\n5. What does SMOTE do?")
+    print("   a) Removes duplicate samples")
+    print("   b) Creates synthetic samples of the minority class")
+    print("   c) Reduces feature dimensionality")
+    print("   d) Normalizes the data")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! SMOTE creates synthetic minority samples")
+        score += 1
+    else:
+        print("   ❌ Incorrect. SMOTE generates synthetic samples using interpolation")
+
 
 
 
