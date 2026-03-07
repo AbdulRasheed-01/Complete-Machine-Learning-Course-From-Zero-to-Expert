@@ -17,3 +17,17 @@ By the end of this week, you will be able to:
 ✅ Use advanced evaluation metrics and techniques
 
 ✅ Build and optimize complex models on real datasets
+
+📚 Theory Content
+
+Kernels for Non-linear Classification
+
+Kernel	        |    Formula	                      |      Use Case
+
+Linear	        |    $K(x,y) = x^T y$	              |    Linearly separable data
+
+Polynomial	    |    $K(x,y) = (γx^T y + r)^d$	    |      Polynomial boundaries
+
+RBF (Gaussian)	|    $K(x,y) = exp(-γ|x-y|^2)$	    |      Most common, flexible
+
+Sigmoid	        |    $K(x,y) = tanh(γx^T y + r)$	  |      Neural network-like
