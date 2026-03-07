@@ -314,3 +314,491 @@ scratch_accuracy = accuracy_score(y_test_s, y_pred_scratch)
 
 print(f"Scratch implementation accuracy: {scratch_accuracy:.4f}")
 
+Exercise 2: Random Forests
+# random_forests.py
+"""
+Random Forests - Bagging ensemble of decision trees
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import make_classification, load_breast_cancer
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.inspection import permutation_importance
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("RANDOM FORESTS")
+print("="*60)
+
+# 1. Load dataset
+print("\n1. LOADING DATASET:")
+data = load_breast_cancer()
+X, y = data.data, data.target
+feature_names = data.feature_names
+target_names = data.target_names
+
+print(f"Dataset shape: {X.shape}")
+print(f"Features: {feature_names[:5]}...")
+print(f"Classes: {target_names}")
+print(f"Class distribution: {np.bincount(y)}")
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# 2. Train Random Forest
+print("\n2. TRAINING RANDOM FOREST:")
+
+rf = RandomForestClassifier(
+    n_estimators=100,
+    max_depth=5,
+    min_samples_split=5,
+    random_state=42,
+    n_jobs=-1
+)
+rf.fit(X_train, y_train)
+
+# Predictions
+y_pred = rf.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy:.4f}")
+
+# 3. Feature Importance
+print("\n3. FEATURE IMPORTANCE:")
+
+# Built-in importance
+importances = rf.feature_importances_
+indices = np.argsort(importances)[::-1]
+
+print("Top 10 most important features:")
+for i in range(10):
+    print(f"  {i+1}. {feature_names[indices[i]]}: {importances[indices[i]]:.4f}")
+
+# Plot feature importance
+plt.figure(figsize=(12, 6))
+plt.barh(range(10), importances[indices[:10]][::-1], align='center')
+plt.yticks(range(10), [feature_names[i] for i in indices[:10]][::-1])
+plt.xlabel('Importance')
+plt.title('Random Forest Feature Importance (Top 10)')
+plt.grid(True, alpha=0.3, axis='x')
+plt.savefig('rf_feature_importance.png', bbox_inches='tight')
+plt.show()
+print("✅ Feature importance saved as 'rf_feature_importance.png'")
+
+# 4. Effect of number of trees
+print("\n4. EFFECT OF NUMBER OF TREES:")
+
+n_estimators_range = [10, 50, 100, 200, 300, 500]
+train_scores = []
+test_scores = []
+
+for n in n_estimators_range:
+    rf = RandomForestClassifier(n_estimators=n, max_depth=5, random_state=42, n_jobs=-1)
+    rf.fit(X_train, y_train)
+    train_scores.append(rf.score(X_train, y_train))
+    test_scores.append(rf.score(X_test, y_test))
+
+plt.figure(figsize=(10, 6))
+plt.plot(n_estimators_range, train_scores, 'o-', label='Training Accuracy', linewidth=2)
+plt.plot(n_estimators_range, test_scores, 's-', label='Test Accuracy', linewidth=2)
+plt.xlabel('Number of Trees')
+plt.ylabel('Accuracy')
+plt.title('Random Forest Performance vs Number of Trees')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig('rf_n_estimators.png')
+plt.show()
+print("✅ Trees vs performance saved as 'rf_n_estimators.png'")
+
+# 5. Effect of max_depth
+print("\n5. EFFECT OF MAX DEPTH:")
+
+max_depth_range = [3, 5, 7, 10, 15, 20, None]
+depth_train_scores = []
+depth_test_scores = []
+
+for depth in max_depth_range:
+    rf = RandomForestClassifier(n_estimators=100, max_depth=depth, random_state=42, n_jobs=-1)
+    rf.fit(X_train, y_train)
+    depth_train_scores.append(rf.score(X_train, y_train))
+    depth_test_scores.append(rf.score(X_test, y_test))
+
+depth_labels = [str(d) if d else 'None' for d in max_depth_range]
+
+plt.figure(figsize=(10, 6))
+x = np.arange(len(depth_labels))
+width = 0.35
+plt.bar(x - width/2, depth_train_scores, width, label='Training', color='blue', alpha=0.7)
+plt.bar(x + width/2, depth_test_scores, width, label='Test', color='green', alpha=0.7)
+plt.xlabel('Max Depth')
+plt.ylabel('Accuracy')
+plt.title('Random Forest Performance vs Max Depth')
+plt.xticks(x, depth_labels)
+plt.legend()
+plt.grid(True, alpha=0.3, axis='y')
+plt.savefig('rf_max_depth.png')
+plt.show()
+print("✅ Max depth analysis saved as 'rf_max_depth.png'")
+
+# 6. Out-of-Bag (OOB) Score
+print("\n6. OUT-OF-BAG (OOB) SCORE:")
+
+rf_oob = RandomForestClassifier(
+    n_estimators=200,
+    max_depth=5,
+    oob_score=True,
+    random_state=42,
+    n_jobs=-1
+)
+rf_oob.fit(X_train, y_train)
+
+print(f"OOB Score: {rf_oob.oob_score_:.4f}")
+print(f"Test Score: {rf_oob.score(X_test, y_test):.4f}")
+
+# 7. Confusion Matrix
+print("\n7. CONFUSION MATRIX:")
+
+cm = confusion_matrix(y_test, y_pred)
+plt.figure(figsize=(8, 6))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=target_names, yticklabels=target_names)
+plt.title('Random Forest - Confusion Matrix')
+plt.ylabel('True Label')
+plt.xlabel('Predicted Label')
+plt.savefig('rf_confusion_matrix.png')
+plt.show()
+print("✅ Confusion matrix saved as 'rf_confusion_matrix.png'")
+
+# 8. Classification Report
+print("\n8. CLASSIFICATION REPORT:")
+print(classification_report(y_test, y_pred, target_names=target_names))
+
+# 9. Random Forest for Regression
+print("\n9. RANDOM FOREST REGRESSION:")
+
+from sklearn.datasets import fetch_california_housing
+
+housing = fetch_california_housing()
+X_h, y_h = housing.data, housing.target
+feature_names_h = housing.feature_names
+
+print(f"Housing dataset shape: {X_h.shape}")
+print(f"Features: {feature_names_h}")
+
+X_train_h, X_test_h, y_train_h, y_test_h = train_test_split(
+    X_h, y_h, test_size=0.2, random_state=42
+)
+
+rf_reg = RandomForestRegressor(n_estimators=100, max_depth=10, random_state=42, n_jobs=-1)
+rf_reg.fit(X_train_h, y_train_h)
+
+# Predictions
+y_pred_h = rf_reg.predict(X_test_h)
+
+# Metrics
+from sklearn.metrics import mean_squared_error, r2_score
+mse = mean_squared_error(y_test_h, y_pred_h)
+r2 = r2_score(y_test_h, y_pred_h)
+
+print(f"\nRandom Forest Regression Results:")
+print(f"  MSE: {mse:.4f}")
+print(f"  RMSE: {np.sqrt(mse):.4f}")
+print(f"  R²: {r2:.4f}")
+
+# Feature importance for regression
+importances_h = rf_reg.feature_importances_
+indices_h = np.argsort(importances_h)[::-1]
+
+plt.figure(figsize=(10, 6))
+plt.barh(range(len(feature_names_h)), importances_h[indices_h], align='center')
+plt.yticks(range(len(feature_names_h)), [feature_names_h[i] for i in indices_h])
+plt.xlabel('Importance')
+plt.title('Random Forest Regression - Feature Importance')
+plt.grid(True, alpha=0.3, axis='x')
+plt.savefig('rf_regression_importance.png', bbox_inches='tight')
+plt.show()
+print("✅ Regression feature importance saved as 'rf_regression_importance.png'")
+
+# 10. Cross-validation
+print("\n10. CROSS-VALIDATION:")
+
+cv_scores = cross_val_score(rf, X, y, cv=5, scoring='accuracy')
+print(f"CV Scores: {cv_scores}")
+print(f"Mean CV Score: {cv_scores.mean():.4f} (±{cv_scores.std():.4f})")
+
+Exercise 3: Support Vector Machines (SVM)
+
+# svm.py
+"""
+Support Vector Machines for classification
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn import svm
+from sklearn.datasets import make_classification, make_circles, make_moons
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.inspection import DecisionBoundaryDisplay
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("SUPPORT VECTOR MACHINES")
+print("="*60)
+
+# 1. Linear SVM on linearly separable data
+print("\n1. LINEAR SVM:")
+
+# Generate linearly separable data
+X_linear, y_linear = make_classification(
+    n_samples=200, n_features=2, n_redundant=0, n_clusters_per_class=1,
+    random_state=42
+)
+
+X_train_l, X_test_l, y_train_l, y_test_l = train_test_split(
+    X_linear, y_linear, test_size=0.2, random_state=42
+)
+
+# Train linear SVM
+svm_linear = svm.SVC(kernel='linear', C=1.0)
+svm_linear.fit(X_train_l, y_train_l)
+
+# Predictions
+y_pred_l = svm_linear.predict(X_test_l)
+accuracy_l = accuracy_score(y_test_l, y_pred_l)
+print(f"Linear SVM Accuracy: {accuracy_l:.4f}")
+
+# Visualize decision boundary
+def plot_svm_boundary(X, y, model, title):
+    plt.figure(figsize=(10, 6))
+    
+    # Plot decision boundary
+    DecisionBoundaryDisplay.from_estimator(
+        model, X, response_method="predict",
+        alpha=0.3, cmap='coolwarm', grid_resolution=100
+    )
+    
+    # Plot data points
+    plt.scatter(X[:, 0], X[:, 1], c=y, cmap='coolwarm', 
+                edgecolors='black', s=50, alpha=0.7)
+    
+    # Highlight support vectors
+    plt.scatter(model.support_vectors_[:, 0], model.support_vectors_[:, 1],
+                s=200, linewidth=1, facecolors='none', edgecolors='black',
+                label='Support Vectors')
+    
+    plt.xlabel('Feature 1')
+    plt.ylabel('Feature 2')
+    plt.title(title)
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    return plt.gcf()
+
+plot_svm_boundary(X_train_l, y_train_l, svm_linear, 'Linear SVM Decision Boundary')
+plt.savefig('svm_linear.png')
+plt.show()
+print("✅ Linear SVM boundary saved as 'svm_linear.png'")
+
+# 2. SVM with different C values (regularization)
+print("\n2. EFFECT OF C PARAMETER (REGULARIZATION):")
+
+C_values = [0.01, 0.1, 1, 10, 100]
+fig, axes = plt.subplots(1, 5, figsize=(20, 4))
+
+for i, C in enumerate(C_values):
+    svm_c = svm.SVC(kernel='linear', C=C)
+    svm_c.fit(X_train_l, y_train_l)
+    
+    DecisionBoundaryDisplay.from_estimator(
+        svm_c, X_train_l, response_method="predict",
+        alpha=0.2, cmap='coolwarm', grid_resolution=100, ax=axes[i]
+    )
+    
+    axes[i].scatter(X_train_l[:, 0], X_train_l[:, 1], c=y_train_l,
+                    cmap='coolwarm', edgecolors='black', s=30, alpha=0.7)
+    axes[i].scatter(svm_c.support_vectors_[:, 0], svm_c.support_vectors_[:, 1],
+                    s=100, linewidth=1, facecolors='none', edgecolors='black')
+    axes[i].set_title(f'C = {C}')
+    axes[i].set_xlabel('Feature 1')
+    axes[i].set_ylabel('Feature 2')
+    axes[i].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('svm_c_values.png')
+plt.show()
+print("✅ C parameter analysis saved as 'svm_c_values.png'")
+
+# 3. SVM with RBF kernel on non-linear data
+print("\n3. SVM WITH RBF KERNEL (NON-LINEAR):")
+
+# Generate non-linear data (circles)
+X_circles, y_circles = make_circles(n_samples=300, noise=0.1, factor=0.3, random_state=42)
+
+X_train_c, X_test_c, y_train_c, y_test_c = train_test_split(
+    X_circles, y_circles, test_size=0.2, random_state=42
+)
+
+# Scale features
+scaler = StandardScaler()
+X_train_c_scaled = scaler.fit_transform(X_train_c)
+X_test_c_scaled = scaler.transform(X_test_c)
+
+# Train SVM with different kernels
+kernels = ['linear', 'poly', 'rbf', 'sigmoid']
+fig, axes = plt.subplots(2, 2, figsize=(12, 12))
+
+for ax, kernel in zip(axes.flatten(), kernels):
+    svm_kernel = svm.SVC(kernel=kernel, C=1.0, gamma='scale')
+    svm_kernel.fit(X_train_c_scaled, y_train_c)
+    
+    # Accuracy
+    y_pred_k = svm_kernel.predict(X_test_c_scaled)
+    acc = accuracy_score(y_test_c, y_pred_k)
+    
+    # Plot
+    DecisionBoundaryDisplay.from_estimator(
+        svm_kernel, X_train_c_scaled, response_method="predict",
+        alpha=0.3, cmap='coolwarm', grid_resolution=100, ax=ax
+    )
+    
+    ax.scatter(X_train_c_scaled[:, 0], X_train_c_scaled[:, 1], 
+               c=y_train_c, cmap='coolwarm', edgecolors='black', s=30, alpha=0.7)
+    ax.scatter(svm_kernel.support_vectors_[:, 0], svm_kernel.support_vectors_[:, 1],
+               s=100, linewidth=1, facecolors='none', edgecolors='black')
+    ax.set_title(f'{kernel.capitalize()} Kernel (Acc: {acc:.3f})')
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('svm_kernels.png')
+plt.show()
+print("✅ Kernel comparison saved as 'svm_kernels.png'")
+
+# 4. Effect of gamma parameter in RBF kernel
+print("\n4. EFFECT OF GAMMA PARAMETER (RBF KERNEL):")
+
+gamma_values = [0.1, 1, 10, 100]
+fig, axes = plt.subplots(2, 2, figsize=(12, 12))
+
+for ax, gamma in zip(axes.flatten(), gamma_values):
+    svm_gamma = svm.SVC(kernel='rbf', C=1.0, gamma=gamma)
+    svm_gamma.fit(X_train_c_scaled, y_train_c)
+    
+    y_pred_g = svm_gamma.predict(X_test_c_scaled)
+    acc = accuracy_score(y_test_c, y_pred_g)
+    
+    DecisionBoundaryDisplay.from_estimator(
+        svm_gamma, X_train_c_scaled, response_method="predict",
+        alpha=0.3, cmap='coolwarm', grid_resolution=100, ax=ax
+    )
+    
+    ax.scatter(X_train_c_scaled[:, 0], X_train_c_scaled[:, 1], 
+               c=y_train_c, cmap='coolwarm', edgecolors='black', s=30, alpha=0.7)
+    ax.set_title(f'Gamma = {gamma} (Acc: {acc:.3f})')
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('svm_gamma.png')
+plt.show()
+print("✅ Gamma parameter analysis saved as 'svm_gamma.png'")
+
+# 5. SVM on moons dataset
+print("\n5. SVM ON MOONS DATASET:")
+
+X_moons, y_moons = make_moons(n_samples=300, noise=0.1, random_state=42)
+X_train_m, X_test_m, y_train_m, y_test_m = train_test_split(
+    X_moons, y_moons, test_size=0.2, random_state=42
+)
+
+scaler_m = StandardScaler()
+X_train_m_scaled = scaler_m.fit_transform(X_train_m)
+X_test_m_scaled = scaler_m.transform(X_test_m)
+
+# Grid search for best parameters
+param_grid = {
+    'C': [0.1, 1, 10, 100],
+    'gamma': [0.1, 1, 10, 'scale', 'auto'],
+    'kernel': ['rbf', 'poly', 'sigmoid']
+}
+
+grid_search = GridSearchCV(
+    svm.SVC(random_state=42),
+    param_grid,
+    cv=5,
+    scoring='accuracy',
+    n_jobs=-1,
+    verbose=1
+)
+grid_search.fit(X_train_m_scaled, y_train_m)
+
+print(f"\nBest parameters: {grid_search.best_params_}")
+print(f"Best CV score: {grid_search.best_score_:.4f}")
+
+# Evaluate best model
+best_svm = grid_search.best_estimator_
+y_pred_best = best_svm.predict(X_test_m_scaled)
+test_acc = accuracy_score(y_test_m, y_pred_best)
+print(f"Test accuracy: {test_acc:.4f}")
+
+# Visualize best model
+plt.figure(figsize=(10, 6))
+DecisionBoundaryDisplay.from_estimator(
+    best_svm, X_train_m_scaled, response_method="predict",
+    alpha=0.3, cmap='coolwarm', grid_resolution=100
+)
+plt.scatter(X_train_m_scaled[:, 0], X_train_m_scaled[:, 1], 
+            c=y_train_m, cmap='coolwarm', edgecolors='black', s=50, alpha=0.7)
+plt.scatter(best_svm.support_vectors_[:, 0], best_svm.support_vectors_[:, 1],
+            s=200, linewidth=1, facecolors='none', edgecolors='black',
+            label='Support Vectors')
+plt.title(f'Best SVM (C={best_svm.C}, gamma={best_svm.gamma})')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig('svm_best_moons.png')
+plt.show()
+print("✅ Best SVM model saved as 'svm_best_moons.png'")
+
+# 6. SVM for multi-class classification
+print("\n6. SVM FOR MULTI-CLASS CLASSIFICATION:")
+
+from sklearn.datasets import load_digits
+
+digits = load_digits()
+X_d, y_d = digits.data, digits.target
+
+print(f"Digits dataset shape: {X_d.shape}")
+print(f"Number of classes: {len(np.unique(y_d))}")
+
+X_train_d, X_test_d, y_train_d, y_test_d = train_test_split(
+    X_d, y_d, test_size=0.2, random_state=42
+)
+
+# SVM with one-vs-one (default)
+svm_multi = svm.SVC(kernel='rbf', C=10, gamma=0.01, decision_function_shape='ovo')
+svm_multi.fit(X_train_d, y_train_d)
+
+y_pred_d = svm_multi.predict(X_test_d)
+accuracy_d = accuracy_score(y_test_d, y_pred_d)
+print(f"Multi-class SVM Accuracy: {accuracy_d:.4f}")
+
+# Confusion matrix
+from sklearn.metrics import confusion_matrix
+cm_d = confusion_matrix(y_test_d, y_pred_d)
+
+plt.figure(figsize=(10, 8))
+sns.heatmap(cm_d, annot=True, fmt='d', cmap='Blues')
+plt.title('SVM Multi-class Confusion Matrix')
+plt.xlabel('Predicted')
+plt.ylabel('True')
+plt.savefig('svm_multiclass_cm.png')
+plt.show()
+print("✅ Multi-class confusion matrix saved as 'svm_multiclass_cm.png'")
+
