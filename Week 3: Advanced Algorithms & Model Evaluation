@@ -1066,3 +1066,5 @@ print("✅ SMOTE visualization saved as 'smote_visualization.png'")
 
 print("\n✅ Imbalanced data handling completed!")
 
+📝 Weekly Project: Credit Card Fraud Detection
+
