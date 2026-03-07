@@ -1595,7 +1595,20 @@ def quiz():
         score += 1
     else:
         print("   ❌ Incorrect. Support vectors are critical points near the boundary")
-    
+# Question 9
+    print("\n9. When would you use Precision-Recall curve instead of ROC curve?")
+    print("   a) For balanced datasets")
+    print("   b) For imbalanced datasets where the positive class is rare")
+    print("   c) For regression problems")
+    print("   d) For multi-class problems")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! PR curves are better for imbalanced data")
+        score += 1
+    else:
+        print("   ❌ Incorrect. PR curves focus on the positive class")
+
+
 
 
 
