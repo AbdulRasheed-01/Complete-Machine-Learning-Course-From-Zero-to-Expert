@@ -1520,6 +1520,19 @@ def quiz():
         score += 1
     else:
         print("   ❌ Incorrect. RBF kernel can model complex non-linear boundaries")
+# Question 3
+    print("\n3. What does the 'C' parameter in SVM control?")
+    print("   a) The kernel type")
+    print("   b) The trade-off between margin size and misclassification")
+    print("   c) The number of support vectors")
+    print("   d) The learning rate")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! C controls the regularization strength")
+        score += 1
+    else:
+        print("   ❌ Incorrect. C is the penalty parameter for errors")
+
 
 
 
