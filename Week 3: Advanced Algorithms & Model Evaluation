@@ -1508,7 +1508,18 @@ def quiz():
         score += 1
     else:
         print("   ❌ Incorrect. Random Forest reduces variance through bagging")
-
+# Question 2
+    print("\n2. Which SVM kernel is most commonly used for non-linear problems?")
+    print("   a) Linear")
+    print("   b) Polynomial")
+    print("   c) RBF (Gaussian)")
+    print("   d) Sigmoid")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "c":
+        print("   ✅ Correct! RBF kernel is flexible and works well for most non-linear problems")
+        score += 1
+    else:
+        print("   ❌ Incorrect. RBF kernel can model complex non-linear boundaries")
 
 
 
