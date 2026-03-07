@@ -1570,9 +1570,32 @@ def quiz():
         score += 1
     else:
         print("   ❌ Incorrect. Gini is a splitting criterion")
+ # Question 7
+    print("\n7. What is the difference between bagging and boosting?")
+    print("   a) Bagging trains models sequentially, boosting in parallel")
+    print("   b) Bagging trains in parallel, boosting sequentially")
+    print("   c) There is no difference")
+    print("   d) Bagging uses different algorithms, boosting the same")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Bagging is parallel, boosting is sequential")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Bagging = parallel, Boosting = sequential")
 
-
-
+ # Question 8
+    print("\n8. In SVM, what are support vectors?")
+    print("   a) All training points")
+    print("   b) Points that lie on or within the margin")
+    print("   c) Points far from the decision boundary")
+    print("   d) Randomly selected points")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Support vectors define the margin")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Support vectors are critical points near the boundary")
+    
 
 
 
