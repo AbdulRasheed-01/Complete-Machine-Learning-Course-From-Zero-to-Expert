@@ -1558,7 +1558,18 @@ def quiz():
     else:
         print("   ❌ Incorrect. SMOTE generates synthetic samples using interpolation")
 
-
+ # Question 6
+    print("\n6. What is the Gini impurity used for in Decision Trees?")
+    print("   a) To measure prediction error")
+    print("   b) To decide the best split at each node")
+    print("   c) To prune the tree")
+    print("   d) To handle missing values")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Gini impurity measures split quality")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Gini is a splitting criterion")
 
 
 
