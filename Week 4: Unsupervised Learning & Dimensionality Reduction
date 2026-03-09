@@ -747,3 +747,279 @@ plt.savefig('dbscan_k_distance.png')
 plt.show()
 print("✅ K-distance graph saved as 'dbscan_k_distance.png'")
 
+Exercise 4: Principal Component Analysis (PCA)
+# pca.py
+"""
+Principal Component Analysis for dimensionality reduction
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_iris, load_digits, fetch_openml
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("PRINCIPAL COMPONENT ANALYSIS (PCA)")
+print("="*60)
+
+# 1. PCA on Iris dataset
+print("\n1. PCA ON IRIS DATASET:")
+
+iris = load_iris()
+X, y = iris.data, iris.target
+feature_names = iris.feature_names
+target_names = iris.target_names
+
+print(f"Dataset shape: {X.shape}")
+print(f"Features: {feature_names}")
+print(f"Number of components: {X.shape[1]}")
+
+# Standardize
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Apply PCA
+pca = PCA()
+X_pca = pca.fit_transform(X_scaled)
+
+print(f"\nExplained variance ratio:")
+for i, ratio in enumerate(pca.explained_variance_ratio_):
+    print(f"  PC{i+1}: {ratio:.4f} ({ratio*100:.2f}%)")
+
+print(f"\nCumulative explained variance:")
+cumulative = np.cumsum(pca.explained_variance_ratio_)
+for i, cum in enumerate(cumulative):
+    print(f"  PC{i+1}: {cum:.4f} ({cum*100:.2f}%)")
+
+# 2. Visualize explained variance
+print("\n2. VISUALIZING EXPLAINED VARIANCE:")
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Scree plot
+axes[0].bar(range(1, len(pca.explained_variance_ratio_) + 1), 
+            pca.explained_variance_ratio_, alpha=0.7, edgecolor='black')
+axes[0].set_xlabel('Principal Component')
+axes[0].set_ylabel('Explained Variance Ratio')
+axes[0].set_title('Scree Plot')
+axes[0].grid(True, alpha=0.3, axis='y')
+
+# Cumulative variance
+axes[1].plot(range(1, len(cumulative) + 1), cumulative, 'bo-', linewidth=2, markersize=8)
+axes[1].axhline(y=0.95, color='r', linestyle='--', label='95% threshold')
+axes[1].set_xlabel('Number of Components')
+axes[1].set_ylabel('Cumulative Explained Variance')
+axes[1].set_title('Cumulative Explained Variance')
+axes[1].grid(True, alpha=0.3)
+axes[1].legend()
+
+plt.tight_layout()
+plt.savefig('pca_variance.png')
+plt.show()
+print("✅ Variance plots saved as 'pca_variance.png'")
+
+# 3. Visualize PCA projection
+print("\n3. PCA 2D PROJECTION:")
+
+# Reduce to 2D for visualization
+pca_2d = PCA(n_components=2)
+X_pca_2d = pca_2d.fit_transform(X_scaled)
+
+plt.figure(figsize=(10, 8))
+for i, target_name in enumerate(target_names):
+    plt.scatter(X_pca_2d[y == i, 0], X_pca_2d[y == i, 1],
+                label=target_name, alpha=0.7, edgecolors='black', s=50)
+plt.xlabel(f'PC1 ({pca_2d.explained_variance_ratio_[0]:.2%})')
+plt.ylabel(f'PC2 ({pca_2d.explained_variance_ratio_[1]:.2%})')
+plt.title('PCA of Iris Dataset (2 Components)')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig('pca_iris_2d.png')
+plt.show()
+print("✅ PCA 2D projection saved as 'pca_iris_2d.png'")
+
+# 4. PCA from scratch
+print("\n4. PCA FROM SCRATCH:")
+
+class PCAScratch:
+    """PCA implementation from scratch"""
+    
+    def __init__(self, n_components):
+        self.n_components = n_components
+        self.components = None
+        self.mean = None
+        self.explained_variance_ = None
+        self.explained_variance_ratio_ = None
+    
+    def fit(self, X):
+        # Center the data
+        self.mean = np.mean(X, axis=0)
+        X_centered = X - self.mean
+        
+        # Compute covariance matrix
+        cov_matrix = np.cov(X_centered.T)
+        
+        # Compute eigenvectors and eigenvalues
+        eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
+        
+        # Sort by eigenvalues in descending order
+        idx = np.argsort(eigenvalues)[::-1]
+        eigenvalues = eigenvalues[idx]
+        eigenvectors = eigenvectors[:, idx]
+        
+        # Store first n_components eigenvectors
+        self.components = eigenvectors[:, :self.n_components]
+        
+        # Explained variance
+        self.explained_variance_ = eigenvalues[:self.n_components]
+        total_var = np.sum(eigenvalues)
+        self.explained_variance_ratio_ = eigenvalues[:self.n_components] / total_var
+        
+        return self
+    
+    def transform(self, X):
+        X_centered = X - self.mean
+        return np.dot(X_centered, self.components)
+    
+    def fit_transform(self, X):
+        self.fit(X)
+        return self.transform(X)
+
+# Test scratch PCA
+pca_scratch = PCAScratch(n_components=2)
+X_pca_scratch = pca_scratch.fit_transform(X_scaled)
+
+print(f"Scratch PCA explained variance ratio: {pca_scratch.explained_variance_ratio_}")
+
+# Compare with scikit-learn
+print(f"scikit-learn explained variance ratio: {pca_2d.explained_variance_ratio_}")
+
+# 5. PCA for classification (dimensionality reduction)
+print("\n5. PCA FOR CLASSIFICATION:")
+
+# Load digits dataset
+digits = load_digits()
+X_digits, y_digits = digits.data, digits.target
+
+print(f"Digits dataset shape: {X_digits.shape}")
+print(f"Original features: {X_digits.shape[1]}")
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X_digits, y_digits, test_size=0.2, random_state=42
+)
+
+# Scale data
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Train classifier on original data
+rf_orig = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_orig.fit(X_train_scaled, y_train)
+y_pred_orig = rf_orig.predict(X_test_scaled)
+acc_orig = accuracy_score(y_test, y_pred_orig)
+print(f"Accuracy on original data: {acc_orig:.4f}")
+
+# Try different numbers of PCA components
+n_components_range = range(10, 65, 10)
+accuracies = []
+
+for n in n_components_range:
+    # Apply PCA
+    pca = PCA(n_components=n)
+    X_train_pca = pca.fit_transform(X_train_scaled)
+    X_test_pca = pca.transform(X_test_scaled)
+    
+    # Train classifier
+    rf_pca = RandomForestClassifier(n_estimators=100, random_state=42)
+    rf_pca.fit(X_train_pca, y_train)
+    y_pred_pca = rf_pca.predict(X_test_pca)
+    acc = accuracy_score(y_test, y_pred_pca)
+    accuracies.append(acc)
+    
+    print(f"Components: {n}, Accuracy: {acc:.4f}, "
+          f"Variance: {np.sum(pca.explained_variance_ratio_):.2%}")
+
+plt.figure(figsize=(10, 6))
+plt.plot(n_components_range, accuracies, 'bo-', linewidth=2, markersize=8)
+plt.axhline(y=acc_orig, color='r', linestyle='--', label=f'Original ({acc_orig:.4f})')
+plt.xlabel('Number of PCA Components')
+plt.ylabel('Accuracy')
+plt.title('Classification Accuracy vs PCA Components')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig('pca_classification.png')
+plt.show()
+print("✅ Classification with PCA saved as 'pca_classification.png'")
+
+# 6. PCA for visualization of high-dimensional data
+print("\n6. PCA VISUALIZATION OF HIGH-DIMENSIONAL DATA:")
+
+# Use first 5 digits for clarity
+mask = y_digits < 5
+X_digits_sub = X_digits[mask]
+y_digits_sub = y_digits[mask]
+
+# Scale
+X_digits_scaled = scaler.fit_transform(X_digits_sub)
+
+# PCA to 2D
+pca_digits = PCA(n_components=2)
+X_digits_pca = pca_digits.fit_transform(X_digits_scaled)
+
+plt.figure(figsize=(12, 8))
+scatter = plt.scatter(X_digits_pca[:, 0], X_digits_pca[:, 1], 
+                       c=y_digits_sub, cmap='tab10', edgecolors='black', alpha=0.7)
+plt.colorbar(scatter, label='Digit')
+plt.xlabel(f'PC1 ({pca_digits.explained_variance_ratio_[0]:.2%})')
+plt.ylabel(f'PC2 ({pca_digits.explained_variance_ratio_[1]:.2%})')
+plt.title('PCA of Digits Dataset (First 5 Digits)')
+plt.grid(True, alpha=0.3)
+plt.savefig('pca_digits.png')
+plt.show()
+print("✅ PCA digits visualization saved as 'pca_digits.png'")
+
+# 7. PCA for noise reduction
+print("\n7. PCA FOR NOISE REDUCTION:")
+
+# Create noisy version of digits
+noise_factor = 0.5
+X_digits_noisy = X_digits + noise_factor * np.random.randn(*X_digits.shape)
+
+# Apply PCA for denoising
+pca_denoise = PCA(n_components=0.95)  # Keep 95% variance
+X_digits_pca = pca_denoise.fit_transform(X_digits_noisy)
+X_digits_denoised = pca_denoise.inverse_transform(X_digits_pca)
+
+# Visualize results
+fig, axes = plt.subplots(3, 10, figsize=(12, 4))
+
+for i in range(10):
+    # Original
+    axes[0, i].imshow(digits.images[i], cmap='gray')
+    axes[0, i].axis('off')
+    
+    # Noisy
+    axes[1, i].imshow(X_digits_noisy[i].reshape(8, 8), cmap='gray')
+    axes[1, i].axis('off')
+    
+    # Denoised
+    axes[2, i].imshow(X_digits_denoised[i].reshape(8, 8), cmap='gray')
+    axes[2, i].axis('off')
+
+axes[0, 0].set_ylabel('Original')
+axes[1, 0].set_ylabel('Noisy')
+axes[2, 0].set_ylabel('Denoised')
+plt.suptitle('PCA for Noise Reduction')
+plt.tight_layout()
+plt.savefig('pca_denoising.png')
+plt.show()
+print("✅ PCA denoising example saved as 'pca_denoising.png'")
+
