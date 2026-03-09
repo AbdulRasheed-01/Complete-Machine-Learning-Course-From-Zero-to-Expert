@@ -1022,4 +1022,5 @@ plt.tight_layout()
 plt.savefig('pca_denoising.png')
 plt.show()
 print("✅ PCA denoising example saved as 'pca_denoising.png'")
+Exercise 5: t-SNE for Visualization
 
