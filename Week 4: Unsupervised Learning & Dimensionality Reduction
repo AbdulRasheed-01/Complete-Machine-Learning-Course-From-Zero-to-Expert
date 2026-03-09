@@ -35,3 +35,283 @@ Gaussian Mixture |	 Distribution-based	 |   Elliptical	   |     Soft assignments
 🔧 Practical Exercises
 Exercise 1: K-Means Clustering
 
+# kmeans_clustering.py
+"""
+K-Means clustering from scratch and with scikit-learn
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import make_blobs, make_classification
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score, adjusted_rand_score, homogeneity_score
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("K-MEANS CLUSTERING")
+print("="*60)
+
+# 1. Generate synthetic clustered data
+print("\n1. GENERATING SYNTHETIC DATA:")
+np.random.seed(42)
+
+# Create blobs
+X, y_true = make_blobs(
+    n_samples=500,
+    centers=4,
+    cluster_std=1.0,
+    random_state=42
+)
+
+print(f"Data shape: {X.shape}")
+print(f"True cluster labels: {np.unique(y_true)}")
+
+# Visualize the data
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.scatter(X[:, 0], X[:, 1], c=y_true, cmap='viridis', edgecolors='black', alpha=0.7)
+plt.title('True Clusters')
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.grid(True, alpha=0.3)
+
+plt.subplot(1, 2, 2)
+plt.scatter(X[:, 0], X[:, 1], edgecolors='black', alpha=0.7)
+plt.title('Unlabeled Data (What we see)')
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('kmeans_data.png')
+plt.show()
+print("✅ Data visualization saved as 'kmeans_data.png'")
+
+# 2. K-Means from scratch
+print("\n2. K-MEANS FROM SCRATCH:")
+
+class KMeansScratch:
+    """K-Means clustering implemented from scratch"""
+    
+    def __init__(self, k=3, max_iters=100, tol=1e-4):
+        self.k = k
+        self.max_iters = max_iters
+        self.tol = tol
+        self.centroids = None
+        self.labels = None
+        self.inertia_ = None
+    
+    def fit(self, X):
+        """Fit K-Means clustering"""
+        n_samples, n_features = X.shape
+        
+        # Randomly initialize centroids
+        random_idx = np.random.choice(n_samples, self.k, replace=False)
+        self.centroids = X[random_idx]
+        
+        for iteration in range(self.max_iters):
+            # Assign clusters
+            distances = self._compute_distances(X)
+            self.labels = np.argmin(distances, axis=1)
+            
+            # Update centroids
+            new_centroids = np.zeros((self.k, n_features))
+            for k in range(self.k):
+                if np.sum(self.labels == k) > 0:
+                    new_centroids[k] = X[self.labels == k].mean(axis=0)
+                else:
+                    new_centroids[k] = self.centroids[k]
+            
+            # Check convergence
+            centroid_shift = np.linalg.norm(new_centroids - self.centroids)
+            if centroid_shift < self.tol:
+                print(f"  Converged after {iteration + 1} iterations")
+                break
+            
+            self.centroids = new_centroids
+        
+        # Calculate inertia (sum of squared distances)
+        self.inertia_ = np.sum(distances[np.arange(n_samples), self.labels] ** 2)
+        
+        return self
+    
+    def _compute_distances(self, X):
+        """Compute distances from each point to each centroid"""
+        n_samples = X.shape[0]
+        distances = np.zeros((n_samples, self.k))
+        
+        for i, centroid in enumerate(self.centroids):
+            distances[:, i] = np.linalg.norm(X - centroid, axis=1)
+        
+        return distances
+    
+    def predict(self, X):
+        """Predict cluster for new samples"""
+        distances = self._compute_distances(X)
+        return np.argmin(distances, axis=1)
+
+# Test scratch implementation
+kmeans_scratch = KMeansScratch(k=4)
+kmeans_scratch.fit(X)
+y_pred_scratch = kmeans_scratch.predict(X)
+
+print(f"\nScratch K-Means inertia: {kmeans_scratch.inertia_:.2f}")
+
+# 3. K-Means with scikit-learn
+print("\n3. K-MEANS WITH SCIKIT-LEARN:")
+
+kmeans_sk = KMeans(n_clusters=4, random_state=42, n_init=10)
+kmeans_sk.fit(X)
+y_pred_sk = kmeans_sk.predict(X)
+
+print(f"scikit-learn K-Means inertia: {kmeans_sk.inertia_:.2f}")
+print(f"Number of iterations: {kmeans_sk.n_iter_}")
+
+# Compare results
+ari_score = adjusted_rand_score(y_true, y_pred_sk)
+print(f"Adjusted Rand Index vs true labels: {ari_score:.4f}")
+
+# 4. Visualize K-Means results
+print("\n4. VISUALIZING CLUSTERING RESULTS:")
+
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+# True clusters
+axes[0].scatter(X[:, 0], X[:, 1], c=y_true, cmap='viridis', edgecolors='black', alpha=0.7)
+axes[0].scatter(kmeans_sk.cluster_centers_[:, 0], kmeans_sk.cluster_centers_[:, 1],
+                c='red', marker='X', s=200, edgecolors='black', linewidth=2, label='Centroids')
+axes[0].set_title('True Clusters')
+axes[0].set_xlabel('Feature 1')
+axes[0].set_ylabel('Feature 2')
+axes[0].grid(True, alpha=0.3)
+axes[0].legend()
+
+# K-Means clusters
+axes[1].scatter(X[:, 0], X[:, 1], c=y_pred_sk, cmap='viridis', edgecolors='black', alpha=0.7)
+axes[1].scatter(kmeans_sk.cluster_centers_[:, 0], kmeans_sk.cluster_centers_[:, 1],
+                c='red', marker='X', s=200, edgecolors='black', linewidth=2, label='Centroids')
+axes[1].set_title('K-Means Clusters')
+axes[1].set_xlabel('Feature 1')
+axes[1].set_ylabel('Feature 2')
+axes[1].grid(True, alpha=0.3)
+axes[1].legend()
+
+# Difference (misclassifications)
+diff = y_true != y_pred_sk
+axes[2].scatter(X[diff, 0], X[diff, 1], c='red', edgecolors='black', alpha=0.7, label='Misclassified')
+axes[2].scatter(X[~diff, 0], X[~diff, 1], c='green', edgecolors='black', alpha=0.3, label='Correct')
+axes[2].scatter(kmeans_sk.cluster_centers_[:, 0], kmeans_sk.cluster_centers_[:, 1],
+                c='blue', marker='X', s=200, edgecolors='black', linewidth=2, label='Centroids')
+axes[2].set_title(f'Misclassifications (ARI = {ari_score:.4f})')
+axes[2].set_xlabel('Feature 1')
+axes[2].set_ylabel('Feature 2')
+axes[2].grid(True, alpha=0.3)
+axes[2].legend()
+
+plt.tight_layout()
+plt.savefig('kmeans_results.png')
+plt.show()
+print("✅ K-Means results saved as 'kmeans_results.png'")
+
+# 5. Finding Optimal K - Elbow Method
+print("\n5. FINDING OPTIMAL K - ELBOW METHOD:")
+
+inertias = []
+silhouette_scores = []
+K_range = range(2, 11)
+
+for k in K_range:
+    kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
+    kmeans.fit(X)
+    inertias.append(kmeans.inertia_)
+    
+    # Silhouette score (requires at least 2 clusters)
+    if k >= 2:
+        sil_score = silhouette_score(X, kmeans.labels_)
+        silhouette_scores.append(sil_score)
+    else:
+        silhouette_scores.append(0)
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Elbow curve
+axes[0].plot(K_range, inertias, 'bo-', linewidth=2, markersize=8)
+axes[0].set_xlabel('Number of Clusters (K)')
+axes[0].set_ylabel('Inertia')
+axes[0].set_title('Elbow Method for Optimal K')
+axes[0].grid(True, alpha=0.3)
+# Mark the elbow (if visible)
+axes[0].axvline(x=4, color='r', linestyle='--', alpha=0.7, label='K=4 (true clusters)')
+axes[0].legend()
+
+# Silhouette scores
+axes[1].plot(K_range, silhouette_scores, 'go-', linewidth=2, markersize=8)
+axes[1].set_xlabel('Number of Clusters (K)')
+axes[1].set_ylabel('Silhouette Score')
+axes[1].set_title('Silhouette Score for Different K')
+axes[1].grid(True, alpha=0.3)
+axes[1].axvline(x=4, color='r', linestyle='--', alpha=0.7, label='K=4 (true clusters)')
+axes[1].legend()
+
+plt.tight_layout()
+plt.savefig('kmeans_elbow.png')
+plt.show()
+print("✅ Elbow method plot saved as 'kmeans_elbow.png'")
+
+optimal_k = K_range[np.argmax(silhouette_scores)]
+print(f"Optimal K by silhouette score: {optimal_k}")
+
+# 6. K-Means on non-spherical data
+print("\n6. K-MEANS LIMITATIONS (NON-SPHERICAL DATA):")
+
+from sklearn.datasets import make_moons, make_circles
+
+# Create non-spherical data
+X_moons, y_moons = make_moons(n_samples=300, noise=0.05, random_state=42)
+X_circles, y_circles = make_circles(n_samples=300, noise=0.05, factor=0.5, random_state=42)
+
+# Apply K-Means
+kmeans_moons = KMeans(n_clusters=2, random_state=42)
+kmeans_moons.fit(X_moons)
+y_moons_pred = kmeans_moons.predict(X_moons)
+
+kmeans_circles = KMeans(n_clusters=2, random_state=42)
+kmeans_circles.fit(X_circles)
+y_circles_pred = kmeans_circles.predict(X_circles)
+
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+
+# Moons - true
+axes[0, 0].scatter(X_moons[:, 0], X_moons[:, 1], c=y_moons, cmap='viridis', edgecolors='black', alpha=0.7)
+axes[0, 0].set_title('Moons - True Clusters')
+axes[0, 0].grid(True, alpha=0.3)
+
+# Moons - K-Means
+axes[0, 1].scatter(X_moons[:, 0], X_moons[:, 1], c=y_moons_pred, cmap='viridis', edgecolors='black', alpha=0.7)
+axes[0, 1].scatter(kmeans_moons.cluster_centers_[:, 0], kmeans_moons.cluster_centers_[:, 1],
+                   c='red', marker='X', s=200, edgecolors='black', linewidth=2)
+axes[0, 1].set_title('Moons - K-Means (Fails)')
+axes[0, 1].grid(True, alpha=0.3)
+
+# Circles - true
+axes[1, 0].scatter(X_circles[:, 0], X_circles[:, 1], c=y_circles, cmap='viridis', edgecolors='black', alpha=0.7)
+axes[1, 0].set_title('Circles - True Clusters')
+axes[1, 0].grid(True, alpha=0.3)
+
+# Circles - K-Means
+axes[1, 1].scatter(X_circles[:, 0], X_circles[:, 1], c=y_circles_pred, cmap='viridis', edgecolors='black', alpha=0.7)
+axes[1, 1].scatter(kmeans_circles.cluster_centers_[:, 0], kmeans_circles.cluster_centers_[:, 1],
+                   c='red', marker='X', s=200, edgecolors='black', linewidth=2)
+axes[1, 1].set_title('Circles - K-Means (Fails)')
+axes[1, 1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('kmeans_limitations.png')
+plt.show()
+print("✅ K-Means limitations plot saved as 'kmeans_limitations.png'")
+
