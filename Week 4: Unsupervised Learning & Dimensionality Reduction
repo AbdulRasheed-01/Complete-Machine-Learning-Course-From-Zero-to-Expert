@@ -527,4 +527,223 @@ plt.savefig('hierarchical_silhouette.png')
 plt.show()
 print("✅ Silhouette scores saved as 'hierarchical_silhouette.png'")
 
+Exercise 3: DBSCAN Clustering
+# dbscan_clustering.py
+"""
+DBSCAN - Density-Based Spatial Clustering of Applications with Noise
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.cluster import DBSCAN
+from sklearn.datasets import make_moons, make_circles, make_blobs
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("DBSCAN CLUSTERING")
+print("="*60)
+
+# 1. Generate datasets with different shapes
+print("\n1. GENERATING DATASETS:")
+
+np.random.seed(42)
+n_samples = 300
+
+# Moons dataset
+X_moons, y_moons = make_moons(n_samples=n_samples, noise=0.05, random_state=42)
+
+# Circles dataset
+X_circles, y_circles = make_circles(n_samples=n_samples, noise=0.05, factor=0.5, random_state=42)
+
+# Blobs dataset
+X_blobs, y_blobs = make_blobs(n_samples=n_samples, centers=3, cluster_std=1.0, random_state=42)
+
+# Add some noise
+X_noise = np.random.randn(50, 2) * 3
+X_blobs_noise = np.vstack([X_blobs, X_noise])
+y_blobs_noise = np.hstack([y_blobs, [-1] * 50])  # -1 for noise
+
+datasets = [
+    ('Moons', X_moons, y_moons),
+    ('Circles', X_circles, y_circles),
+    ('Blobs with Noise', X_blobs_noise, y_blobs_noise)
+]
+
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+for ax, (name, X, y) in zip(axes, datasets):
+    ax.scatter(X[:, 0], X[:, 1], c=y, cmap='viridis', edgecolors='black', alpha=0.7)
+    ax.set_title(name)
+    ax.set_xlabel('Feature 1')
+    ax.set_ylabel('Feature 2')
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('dbscan_datasets.png')
+plt.show()
+print("✅ Datasets visualization saved as 'dbscan_datasets.png'")
+
+# 2. DBSCAN parameters exploration
+print("\n2. DBSCAN PARAMETERS:")
+
+# Use moons dataset for parameter exploration
+X = X_moons
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Try different epsilon values
+eps_values = [0.1, 0.2, 0.3, 0.4]
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+
+for ax, eps in zip(axes.flatten(), eps_values):
+    dbscan = DBSCAN(eps=eps, min_samples=5)
+    labels = dbscan.fit_predict(X_scaled)
+    
+    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+    n_noise = list(labels).count(-1)
+    
+    ax.scatter(X_scaled[:, 0], X_scaled[:, 1], c=labels, cmap='viridis', edgecolors='black', alpha=0.7)
+    ax.set_title(f'eps={eps}, clusters={n_clusters}, noise={n_noise}')
+    ax.set_xlabel('Feature 1 (scaled)')
+    ax.set_ylabel('Feature 2 (scaled)')
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('dbscan_eps_comparison.png')
+plt.show()
+print("✅ Epsilon comparison saved as 'dbscan_eps_comparison.png'")
+
+# 3. Try different min_samples values
+print("\n3. MIN_SAMPLES PARAMETER:")
+
+min_samples_values = [3, 5, 10, 20]
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+
+for ax, min_samples in zip(axes.flatten(), min_samples_values):
+    dbscan = DBSCAN(eps=0.3, min_samples=min_samples)
+    labels = dbscan.fit_predict(X_scaled)
+    
+    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+    n_noise = list(labels).count(-1)
+    
+    ax.scatter(X_scaled[:, 0], X_scaled[:, 1], c=labels, cmap='viridis', edgecolors='black', alpha=0.7)
+    ax.set_title(f'min_samples={min_samples}, clusters={n_clusters}, noise={n_noise}')
+    ax.set_xlabel('Feature 1 (scaled)')
+    ax.set_ylabel('Feature 2 (scaled)')
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('dbscan_min_samples_comparison.png')
+plt.show()
+print("✅ Min samples comparison saved as 'dbscan_min_samples_comparison.png'")
+
+# 4. DBSCAN on all datasets
+print("\n4. DBSCAN ON DIFFERENT DATASETS:")
+
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+# Original data
+for ax, (name, X, y) in zip(axes[0], datasets):
+    ax.scatter(X[:, 0], X[:, 1], c=y, cmap='viridis', edgecolors='black', alpha=0.7)
+    ax.set_title(f'{name} (True)')
+    ax.set_xlabel('Feature 1')
+    ax.set_ylabel('Feature 2')
+    ax.grid(True, alpha=0.3)
+
+# DBSCAN results
+for ax, (name, X, y) in zip(axes[1], datasets):
+    # Scale data
+    X_scaled = StandardScaler().fit_transform(X)
+    
+    # Apply DBSCAN
+    dbscan = DBSCAN(eps=0.3, min_samples=5)
+    labels = dbscan.fit_predict(X_scaled)
+    
+    n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+    n_noise = list(labels).count(-1)
+    
+    ax.scatter(X[:, 0], X[:, 1], c=labels, cmap='viridis', edgecolors='black', alpha=0.7)
+    ax.set_title(f'{name} - DBSCAN (clusters={n_clusters}, noise={n_noise})')
+    ax.set_xlabel('Feature 1')
+    ax.set_ylabel('Feature 2')
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('dbscan_all_datasets.png')
+plt.show()
+print("✅ DBSCAN results on all datasets saved as 'dbscan_all_datasets.png'")
+
+# 5. K-Means vs DBSCAN comparison
+print("\n5. K-MEANS VS DBSCAN COMPARISON:")
+
+from sklearn.cluster import KMeans
+
+# Use moons dataset for comparison
+X = X_moons
+X_scaled = StandardScaler().fit_transform(X)
+
+# K-Means
+kmeans = KMeans(n_clusters=2, random_state=42)
+kmeans_labels = kmeans.fit_predict(X_scaled)
+
+# DBSCAN
+dbscan = DBSCAN(eps=0.3, min_samples=5)
+dbscan_labels = dbscan.fit_predict(X_scaled)
+
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+
+# True labels
+axes[0].scatter(X[:, 0], X[:, 1], c=y_moons, cmap='viridis', edgecolors='black', alpha=0.7)
+axes[0].set_title('True Clusters')
+axes[0].grid(True, alpha=0.3)
+
+# K-Means
+axes[1].scatter(X[:, 0], X[:, 1], c=kmeans_labels, cmap='viridis', edgecolors='black', alpha=0.7)
+axes[1].scatter(kmeans.cluster_centers_[:, 0], kmeans.cluster_centers_[:, 1],
+                c='red', marker='X', s=200, edgecolors='black', linewidth=2)
+axes[1].set_title('K-Means (Fails)')
+axes[1].grid(True, alpha=0.3)
+
+# DBSCAN
+axes[2].scatter(X[:, 0], X[:, 1], c=dbscan_labels, cmap='viridis', edgecolors='black', alpha=0.7)
+axes[2].set_title('DBSCAN (Works!)')
+axes[2].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('kmeans_vs_dbscan.png')
+plt.show()
+print("✅ K-Means vs DBSCAN comparison saved as 'kmeans_vs_dbscan.png'")
+
+# 6. Finding optimal epsilon with k-distance graph
+print("\n6. K-DISTANCE GRAPH FOR EPSILON SELECTION:")
+
+from sklearn.neighbors import NearestNeighbors
+
+def plot_k_distance(X, k=5):
+    """Plot k-distance graph to find optimal epsilon"""
+    neighbors = NearestNeighbors(n_neighbors=k)
+    neighbors_fit = neighbors.fit(X)
+    distances, indices = neighbors_fit.kneighbors(X)
+    
+    # Sort distances
+    k_dist = np.sort(distances[:, k-1])
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(k_dist)
+    plt.xlabel('Points sorted by distance')
+    plt.ylabel(f'{k}-th neighbor distance')
+    plt.title(f'K-Distance Graph (k={k}) - Find the "elbow"')
+    plt.grid(True, alpha=0.3)
+    
+    # Find the elbow (approximate)
+    # The optimal eps is at the point of maximum curvature
+    return plt.gcf()
+
+fig = plot_k_distance(X_scaled, k=5)
+plt.savefig('dbscan_k_distance.png')
+plt.show()
+print("✅ K-distance graph saved as 'dbscan_k_distance.png'")
 
