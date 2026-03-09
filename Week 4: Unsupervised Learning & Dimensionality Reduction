@@ -318,3 +318,213 @@ plt.savefig('kmeans_limitations.png')
 plt.show()
 print("✅ K-Means limitations plot saved as 'kmeans_limitations.png'")
 
+Exercise 2: Hierarchical Clustering
+
+# hierarchical_clustering.py
+"""
+Hierarchical clustering with dendrograms
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+from scipy.spatial.distance import pdist
+from sklearn.datasets import make_blobs
+from sklearn.cluster import AgglomerativeClustering
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("HIERARCHICAL CLUSTERING")
+print("="*60)
+
+# 1. Generate data
+print("\n1. GENERATING DATA:")
+np.random.seed(42)
+X, y = make_blobs(n_samples=50, centers=3, cluster_std=1.0, random_state=42)
+
+print(f"Data shape: {X.shape}")
+print(f"Number of true clusters: {len(np.unique(y))}")
+
+# Visualize data
+plt.figure(figsize=(8, 6))
+plt.scatter(X[:, 0], X[:, 1], c=y, cmap='viridis', edgecolors='black', s=50)
+plt.title('Original Data with True Clusters')
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.grid(True, alpha=0.3)
+plt.savefig('hierarchical_data.png')
+plt.show()
+print("✅ Data visualization saved as 'hierarchical_data.png'")
+
+# 2. Compute linkage matrices with different methods
+print("\n2. COMPUTING LINKAGE MATRICES:")
+
+linkage_methods = ['single', 'complete', 'average', 'ward']
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+for ax, method in zip(axes.flatten(), linkage_methods):
+    # Compute linkage
+    Z = linkage(X, method=method)
+    
+    # Plot dendrogram
+    dendrogram(Z, ax=ax, truncate_mode='level', p=5)
+    ax.set_title(f'{method.capitalize()} Linkage')
+    ax.set_xlabel('Sample Index')
+    ax.set_ylabel('Distance')
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('hierarchical_dendrograms.png')
+plt.show()
+print("✅ Dendrograms saved as 'hierarchical_dendrograms.png'")
+
+# 3. Analyze different linkage methods
+print("\n3. COMPARING LINKAGE METHODS:")
+
+for method in linkage_methods:
+    # Compute linkage
+    Z = linkage(X, method=method)
+    
+    # Get clusters (cut at 3 clusters)
+    clusters = fcluster(Z, 3, criterion='maxclust')
+    
+    # Calculate cophenetic correlation (how well dendrogram preserves distances)
+    from scipy.cluster.hierarchy import cophenet
+    c, coph_dists = cophenet(Z, pdist(X))
+    
+    print(f"\n{method.capitalize()} Linkage:")
+    print(f"  Cophenetic correlation: {c:.4f}")
+    print(f"  Cluster sizes: {np.bincount(clusters)}")
+
+# 4. Visualize clustering results
+print("\n4. VISUALIZING CLUSTERING RESULTS:")
+
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+
+for ax, method in zip(axes.flatten(), linkage_methods):
+    # Perform hierarchical clustering
+    hc = AgglomerativeClustering(n_clusters=3, linkage=method)
+    labels = hc.fit_predict(X)
+    
+    # Plot
+    ax.scatter(X[:, 0], X[:, 1], c=labels, cmap='viridis', edgecolors='black', alpha=0.7)
+    ax.set_title(f'{method.capitalize()} Linkage')
+    ax.set_xlabel('Feature 1')
+    ax.set_ylabel('Feature 2')
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('hierarchical_clusters.png')
+plt.show()
+print("✅ Clustering results saved as 'hierarchical_clusters.png'")
+
+# 5. Hierarchical clustering with distance threshold
+print("\n5. CLUSTERING WITH DISTANCE THRESHOLD:")
+
+# Compute linkage
+Z = linkage(X, method='ward')
+
+# Find distance threshold that gives 3 clusters
+max_d = Z[-3, 2]  # Distance for 3 clusters
+clusters = fcluster(Z, max_d, criterion='distance')
+
+plt.figure(figsize=(12, 5))
+
+# Dendrogram with cut
+plt.subplot(1, 2, 1)
+dendrogram(Z, truncate_mode='level', p=5)
+plt.axhline(y=max_d, color='r', linestyle='--', linewidth=2, label=f'Cut at d={max_d:.2f}')
+plt.title('Dendrogram with Cut')
+plt.xlabel('Sample Index')
+plt.ylabel('Distance')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+# Resulting clusters
+plt.subplot(1, 2, 2)
+plt.scatter(X[:, 0], X[:, 1], c=clusters, cmap='viridis', edgecolors='black', alpha=0.7)
+plt.title(f'Clusters (cut at d={max_d:.2f})')
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('hierarchical_cut.png')
+plt.show()
+print("✅ Distance threshold plot saved as 'hierarchical_cut.png'")
+
+# 6. Heatmap with hierarchical clustering
+print("\n6. HEATMAP WITH HIERARCHICAL CLUSTERING:")
+
+# Create correlated data
+np.random.seed(42)
+n_features = 10
+n_samples = 50
+
+# Create correlation matrix
+corr = np.zeros((n_features, n_features))
+for i in range(n_features):
+    for j in range(n_features):
+        corr[i, j] = 0.9 ** abs(i - j)
+
+# Generate correlated data
+X_corr = np.random.multivariate_normal(np.zeros(n_features), corr, n_samples)
+
+# Compute linkage for rows and columns
+row_linkage = linkage(X_corr, method='average')
+col_linkage = linkage(X_corr.T, method='average')
+
+# Create heatmap with clustering
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+# Dendrogram for rows
+dendrogram(row_linkage, ax=ax1, orientation='left', truncate_mode='level', p=5)
+ax1.set_title('Row Dendrogram')
+
+# Heatmap with clustered rows and columns
+from scipy.cluster.hierarchy import leaves_list
+row_order = leaves_list(row_linkage)
+col_order = leaves_list(col_linkage)
+
+im = ax2.imshow(X_corr[row_order][:, col_order], aspect='auto', cmap='coolwarm')
+ax2.set_title('Clustered Heatmap')
+ax2.set_xlabel('Features (clustered)')
+ax2.set_ylabel('Samples (clustered)')
+plt.colorbar(im, ax=ax2)
+
+plt.tight_layout()
+plt.savefig('hierarchical_heatmap.png')
+plt.show()
+print("✅ Clustered heatmap saved as 'hierarchical_heatmap.png'")
+
+# 7. Choosing the number of clusters
+print("\n7. CHOOSING THE NUMBER OF CLUSTERS:")
+
+from sklearn.metrics import silhouette_score
+
+Z = linkage(X, method='ward')
+max_clusters = 10
+silhouette_scores = []
+
+for k in range(2, max_clusters + 1):
+    labels = fcluster(Z, k, criterion='maxclust')
+    if len(np.unique(labels)) > 1:
+        score = silhouette_score(X, labels)
+        silhouette_scores.append(score)
+    else:
+        silhouette_scores.append(0)
+
+plt.figure(figsize=(10, 6))
+plt.plot(range(2, max_clusters + 1), silhouette_scores, 'bo-', linewidth=2, markersize=8)
+plt.xlabel('Number of Clusters')
+plt.ylabel('Silhouette Score')
+plt.title('Silhouette Score for Hierarchical Clustering')
+plt.grid(True, alpha=0.3)
+plt.axvline(x=3, color='r', linestyle='--', alpha=0.7, label='True clusters (3)')
+plt.legend()
+plt.savefig('hierarchical_silhouette.png')
+plt.show()
+print("✅ Silhouette scores saved as 'hierarchical_silhouette.png'")
+
+
