@@ -1,1 +1,21 @@
 Week 4: Unsupervised Learning & Dimensionality Reduction
+📋 Learning Objectives
+By the end of this week, you will be able to:
+
+✅ Understand the difference between supervised and unsupervised learning
+
+✅ Implement K-Means clustering for customer segmentation
+
+✅ Use Hierarchical clustering for nested groupings
+
+✅ Apply DBSCAN for density-based clustering
+
+✅ Master Principal Component Analysis (PCA) for dimensionality reduction
+
+✅ Visualize high-dimensional data with t-SNE
+
+✅ Detect anomalies using unsupervised techniques
+
+✅ Evaluate clustering performance with various metrics
+
+✅ Build a complete customer segmentation system
