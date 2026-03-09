@@ -30,3 +30,6 @@ Hierarchical	   |   Connectivity-based	 |   Any	         |     Dendrogram, no K 
 DBSCAN	         |   Density-based	     |   Arbitrary	   |     Finds outliers, no K needed |	   Varies with density
 
 Gaussian Mixture |	 Distribution-based	 |   Elliptical	   |     Soft assignments	           |     Complex, slow
+
+
+🔧 Practical Exercises
