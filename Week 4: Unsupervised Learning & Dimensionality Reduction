@@ -1127,3 +1127,153 @@ plt.show()
 print("✅ Perplexity comparison saved as 'tsne_perplexity.png'")
 
 # 6. Effect of number of iterations
+print("\n6. EFFECT OF ITERATIONS:")
+
+n_iter_values = [250, 500, 1000, 2000]
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+
+for ax, n_iter in zip(axes.flatten(), n_iter_values):
+    tsne = TSNE(n_components=2, perplexity=30, random_state=42, n_iter=n_iter)
+    X_tsne = tsne.fit_transform(X_scaled)
+    
+    ax.scatter(X_tsne[:, 0], X_tsne[:, 1], c=y, cmap='tab10', 
+               edgecolors='black', alpha=0.7)
+    ax.set_title(f'Iterations = {n_iter}')
+    ax.set_xlabel('t-SNE Component 1')
+    ax.set_ylabel('t-SNE Component 2')
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('tsne_iterations.png')
+plt.show()
+print("✅ Iterations comparison saved as 'tsne_iterations.png'")
+
+# 7. t-SNE on MNIST subset
+print("\n7. T-SNE ON MNIST SUBSET:")
+
+# Load MNIST subset
+from sklearn.datasets import fetch_openml
+print("Loading MNIST (this may take a moment)...")
+mnist = fetch_openml('mnist_784', version=1, as_frame=False, parser='auto')
+X_mnist, y_mnist = mnist.data, mnist.target.astype(int)
+
+# Take a subset for faster computation
+n_samples = 2000
+np.random.seed(42)
+idx = np.random.choice(len(X_mnist), n_samples, replace=False)
+X_subset = X_mnist[idx]
+y_subset = y_mnist[idx]
+
+print(f"MNIST subset shape: {X_subset.shape}")
+print(f"Classes present: {np.unique(y_subset)}")
+
+# Scale
+X_subset_scaled = StandardScaler().fit_transform(X_subset)
+
+# Apply PCA first (optional, can speed up t-SNE)
+pca = PCA(n_components=50)
+X_pca = pca.fit_transform(X_subset_scaled)
+print(f"After PCA: {X_pca.shape} (preserving {np.sum(pca.explained_variance_ratio_):.2%} variance)")
+
+# Apply t-SNE
+print("Running t-SNE on MNIST subset...")
+tsne_mnist = TSNE(n_components=2, perplexity=30, random_state=42, n_iter=1000)
+X_tsne_mnist = tsne_mnist.fit_transform(X_pca)
+
+plt.figure(figsize=(12, 10))
+scatter = plt.scatter(X_tsne_mnist[:, 0], X_tsne_mnist[:, 1], 
+                       c=y_subset, cmap='tab10', edgecolors='black', alpha=0.7, s=50)
+plt.colorbar(scatter, label='Digit')
+plt.title('t-SNE Visualization of MNIST Subset')
+plt.xlabel('t-SNE Component 1')
+plt.ylabel('t-SNE Component 2')
+plt.grid(True, alpha=0.3)
+plt.savefig('tsne_mnist.png')
+plt.show()
+print("✅ MNIST t-SNE visualization saved as 'tsne_mnist.png'")
+
+# 8. t-SNE with different random seeds
+print("\n8. T-SNE STABILITY WITH DIFFERENT RANDOM SEEDS:")
+
+seeds = [0, 42, 99, 123]
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+
+for ax, seed in zip(axes.flatten(), seeds):
+    tsne = TSNE(n_components=2, perplexity=30, random_state=seed, n_iter=1000)
+    X_tsne = tsne.fit_transform(X_scaled)
+    
+    ax.scatter(X_tsne[:, 0], X_tsne[:, 1], c=y, cmap='tab10', 
+               edgecolors='black', alpha=0.7, s=10)
+    ax.set_title(f'Random Seed = {seed}')
+    ax.set_xlabel('t-SNE Component 1')
+    ax.set_ylabel('t-SNE Component 2')
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('tsne_random_seeds.png')
+plt.show()
+print("✅ Random seed comparison saved as 'tsne_random_seeds.png'")
+
+# 9. t-SNE for visualizing clusters
+print("\n9. T-SNE FOR CLUSTER VISUALIZATION:")
+
+from sklearn.cluster import KMeans
+
+# Apply K-Means to digits
+kmeans = KMeans(n_clusters=10, random_state=42)
+kmeans_labels = kmeans.fit_predict(X_scaled)
+
+# Visualize t-SNE with K-Means labels
+fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+
+# True labels
+axes[0].scatter(X_tsne[:, 0], X_tsne[:, 1], c=y, cmap='tab10', 
+                edgecolors='black', alpha=0.7, s=20)
+axes[0].set_title('True Labels')
+axes[0].set_xlabel('t-SNE Component 1')
+axes[0].set_ylabel('t-SNE Component 2')
+axes[0].grid(True, alpha=0.3)
+
+# K-Means labels
+axes[1].scatter(X_tsne[:, 0], X_tsne[:, 1], c=kmeans_labels, cmap='tab10', 
+                edgecolors='black', alpha=0.7, s=20)
+axes[1].set_title('K-Means Clusters')
+axes[1].set_xlabel('t-SNE Component 1')
+axes[1].set_ylabel('t-SNE Component 2')
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('tsne_clusters.png')
+plt.show()
+print("✅ Cluster visualization saved as 'tsne_clusters.png'")
+
+# 10. Performance comparison: PCA vs t-SNE
+print("\n10. PERFORMANCE COMPARISON:")
+
+from time import time
+
+methods = {
+    'PCA': PCA(n_components=2),
+    't-SNE (perplexity=30)': TSNE(n_components=2, perplexity=30, random_state=42),
+    't-SNE (perplexity=50)': TSNE(n_components=2, perplexity=50, random_state=42),
+}
+
+times = {}
+for name, method in methods.items():
+    start = time()
+    if name == 'PCA':
+        X_transformed = method.fit_transform(X_scaled)
+    else:
+        X_transformed = method.fit_transform(X_scaled)
+    end = time()
+    times[name] = end - start
+    print(f"{name}: {times[name]:.2f} seconds")
+
+plt.figure(figsize=(10, 6))
+plt.bar(times.keys(), times.values(), color=['blue', 'green', 'orange'])
+plt.ylabel('Time (seconds)')
+plt.title('PCA vs t-SNE Computation Time')
+plt.grid(True, alpha=0.3, axis='y')
+plt.savefig('tsne_vs_pca_time.png')
+plt.show()
+print("✅ Performance comparison saved as 'tsne_vs_pca_time.png'")
