@@ -1797,3 +1797,163 @@ print("✅ Scaler and model saved")
 print("\n" + "="*70)
 print("✅ PROJECT COMPLETED SUCCESSFULLY!")
 print("="*70)
+📊 Week 4 Quiz
+# week4_quiz.py
+"""
+Week 4 Quiz - Test your knowledge of Unsupervised Learning
+"""
+
+def quiz():
+    score = 0
+    total = 10
+    
+    print("\n" + "="*50)
+    print("WEEK 4 QUIZ - Unsupervised Learning & Dimensionality Reduction")
+    print("="*50")
+    
+    # Question 1
+    print("\n1. What is the main difference between supervised and unsupervised learning?")
+    print("   a) Supervised uses labeled data, unsupervised uses unlabeled data")
+    print("   b) Supervised is faster than unsupervised")
+    print("   c) Unsupervised always gives better results")
+    print("   d) There is no difference")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "a":
+        print("   ✅ Correct! Supervised learning uses labeled data")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Supervised learning requires labels, unsupervised does not")
+    
+    # Question 2
+    print("\n2. What does the 'K' in K-Means clustering represent?")
+    print("   a) The number of iterations")
+    print("   b) The number of clusters")
+    print("   c) The number of features")
+    print("   d) The learning rate")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! K is the number of clusters")
+        score += 1
+    else:
+        print("   ❌ Incorrect. K is the number of clusters to find")
+    
+    # Question 3
+    print("\n3. What is the purpose of PCA?")
+    print("   a) To cluster data")
+    print("   b) To reduce dimensionality while preserving variance")
+    print("   c) To classify data")
+    print("   d) To handle missing values")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! PCA reduces dimensions while maximizing variance")
+        score += 1
+    else:
+        print("   ❌ Incorrect. PCA is for dimensionality reduction")
+    
+    # Question 4
+    print("\n4. Which clustering algorithm does NOT require specifying the number of clusters?")
+    print("   a) K-Means")
+    print("   b) Hierarchical (if using distance threshold)")
+    print("   c) Gaussian Mixture Models")
+    print("   d) All require specifying K")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Hierarchical clustering with distance threshold doesn't need K")
+        score += 1
+    else:
+        print("   ❌ Incorrect. DBSCAN and hierarchical (with threshold) don't need K")
+    
+    # Question 5
+    print("\n5. What metric is commonly used to evaluate clustering quality?")
+    print("   a) Accuracy")
+    print("   b) Silhouette Score")
+    print("   c) Precision")
+    print("   d) Mean Squared Error")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Silhouette score measures cluster cohesion and separation")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Silhouette score is a common clustering metric")
+    
+    # Question 6
+    print("\n6. What is the 'elbow method' used for in K-Means?")
+    print("   a) To find optimal number of clusters")
+    print("   b) To initialize centroids")
+    print("   c) To speed up computation")
+    print("   d) To handle outliers")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "a":
+        print("   ✅ Correct! Elbow method helps choose K")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Elbow method plots inertia vs K to find optimal K")
+    
+    # Question 7
+    print("\n7. What does DBSCAN use to define clusters?")
+    print("   a) Centroids")
+    print("   b) Density of points")
+    print("   c) Distance matrix")
+    print("   d) Random initialization")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! DBSCAN finds dense regions separated by sparse regions")
+        score += 1
+    else:
+        print("   ❌ Incorrect. DBSCAN is density-based")
+    
+    # Question 8
+    print("\n8. What does t-SNE primarily used for?")
+    print("   a) Clustering")
+    print("   b) Dimensionality reduction for visualization")
+    print("   c) Classification")
+    print("   d) Regression")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! t-SNE is great for visualizing high-dimensional data")
+        score += 1
+    else:
+        print("   ❌ Incorrect. t-SNE is mainly for visualization")
+    
+    # Question 9
+    print("\n9. What does a high silhouette score (close to 1) indicate?")
+    print("   a) Poor clustering")
+    print("   b) Well-separated, compact clusters")
+    print("   c) Too many clusters")
+    print("   d) Clusters overlap")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! High silhouette score means good clustering")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Silhouette close to 1 indicates well-separated clusters")
+    
+    # Question 10
+    print("\n10. What is the curse of dimensionality?")
+    print("    a) When models become too complex")
+    print("    b) When data becomes sparse as dimensions increase")
+    print("    c) When algorithms run slowly")
+    print("    d) When memory usage is high")
+    answer = input("    Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("    ✅ Correct! High dimensions make data sparse and distances less meaningful")
+        score += 1
+    else:
+        print("    ❌ Incorrect. Curse of dimensionality refers to data sparsity in high dimensions")
+    
+    # Final score
+    print("\n" + "="*50)
+    print(f"QUIZ COMPLETE! Your score: {score}/{total}")
+    print("="*50")
+    
+    if score == total:
+        print("🏆 Perfect! You're mastering unsupervised learning!")
+    elif score >= 8:
+        print("🌟 Great job! You have a solid understanding!")
+    elif score >= 6:
+        print("📚 Good effort! Review the topics you missed.")
+    else:
+        print("💪 Keep practicing! These concepts take time to master.")
+
+if __name__ == "__main__":
+    quiz()
