@@ -1024,3 +1024,106 @@ plt.show()
 print("✅ PCA denoising example saved as 'pca_denoising.png'")
 Exercise 5: t-SNE for Visualization
 
+# tsne.py
+"""
+t-SNE (t-Distributed Stochastic Neighbor Embedding) for visualization
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_digits, fetch_openml
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+import time
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("T-SNE VISUALIZATION")
+print("="*60)
+
+# 1. Load digits dataset
+print("\n1. LOADING DATASET:")
+
+digits = load_digits()
+X, y = digits.data, digits.target
+
+print(f"Dataset shape: {X.shape}")
+print(f"Number of classes: {len(np.unique(y))}")
+print(f"Features per sample: {X.shape[1]}")
+
+# Scale data
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# 2. Apply t-SNE
+print("\n2. APPLYING T-SNE:")
+
+print("This may take a moment...")
+start_time = time.time()
+
+tsne = TSNE(n_components=2, random_state=42, perplexity=30, n_iter=1000)
+X_tsne = tsne.fit_transform(X_scaled)
+
+tsne_time = time.time() - start_time
+print(f"t-SNE completed in {tsne_time:.2f} seconds")
+print(f"Final shape: {X_tsne.shape}")
+
+# 3. Compare with PCA
+print("\n3. COMPARING WITH PCA:")
+
+pca = PCA(n_components=2)
+X_pca = pca.fit_transform(X_scaled)
+
+# 4. Visualize both
+print("\n4. VISUALIZING RESULTS:")
+
+fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+
+# PCA
+scatter1 = axes[0].scatter(X_pca[:, 0], X_pca[:, 1], c=y, cmap='tab10', 
+                           edgecolors='black', alpha=0.7)
+axes[0].set_title('PCA Visualization')
+axes[0].set_xlabel('PC1')
+axes[0].set_ylabel('PC2')
+axes[0].grid(True, alpha=0.3)
+plt.colorbar(scatter1, ax=axes[0])
+
+# t-SNE
+scatter2 = axes[1].scatter(X_tsne[:, 0], X_tsne[:, 1], c=y, cmap='tab10', 
+                           edgecolors='black', alpha=0.7)
+axes[1].set_title('t-SNE Visualization')
+axes[1].set_xlabel('t-SNE Component 1')
+axes[1].set_ylabel('t-SNE Component 2')
+axes[1].grid(True, alpha=0.3)
+plt.colorbar(scatter2, ax=axes[1])
+
+plt.tight_layout()
+plt.savefig('tsne_vs_pca.png')
+plt.show()
+print("✅ t-SNE vs PCA comparison saved as 'tsne_vs_pca.png'")
+
+# 5. Effect of perplexity
+print("\n5. EFFECT OF PERPLEXITY PARAMETER:")
+
+perplexities = [5, 30, 50, 100]
+fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+
+for ax, perp in zip(axes.flatten(), perplexities):
+    tsne = TSNE(n_components=2, perplexity=perp, random_state=42, n_iter=1000)
+    X_tsne = tsne.fit_transform(X_scaled)
+    
+    ax.scatter(X_tsne[:, 0], X_tsne[:, 1], c=y, cmap='tab10', 
+               edgecolors='black', alpha=0.7)
+    ax.set_title(f'Perplexity = {perp}')
+    ax.set_xlabel('t-SNE Component 1')
+    ax.set_ylabel('t-SNE Component 2')
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('tsne_perplexity.png')
+plt.show()
+print("✅ Perplexity comparison saved as 'tsne_perplexity.png'")
+
+# 6. Effect of number of iterations
