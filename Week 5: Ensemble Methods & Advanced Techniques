@@ -1737,4 +1737,167 @@ if best_model_name in models:
 print("\n" + "="*70)
 print("✅ PROJECT COMPLETED SUCCESSFULLY!")
 print("="*70)
+📊 Week 5 Quiz
+
+
+# week5_quiz.py
+"""
+Week 5 Quiz - Test your knowledge of Ensemble Methods
+"""
+
+def quiz():
+    score = 0
+    total = 10
+    
+    print("\n" + "="*50)
+    print("WEEK 5 QUIZ - Ensemble Methods & Advanced Techniques")
+    print("="*50)
+    
+    # Question 1
+    print("\n1. What is the main difference between bagging and boosting?")
+    print("   a) Bagging trains models sequentially, boosting in parallel")
+    print("   b) Bagging trains in parallel, boosting sequentially")
+    print("   c) There is no difference")
+    print("   d) Bagging uses neural networks, boosting uses trees")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Bagging is parallel, boosting is sequential")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Bagging trains models independently, boosting sequentially")
+    
+    # Question 2
+    print("\n2. Which algorithm is known for its speed and low memory usage?")
+    print("   a) XGBoost")
+    print("   b) LightGBM")
+    print("   c) CatBoost")
+    print("   d) Random Forest")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! LightGBM is optimized for speed and memory")
+        score += 1
+    else:
+        print("   ❌ Incorrect. LightGBM uses histogram-based algorithms for speed")
+    
+    # Question 3
+    print("\n3. What is stacking in ensemble learning?")
+    print("   a) Combining predictions through voting")
+    print("   b) Training a meta-learner on base model predictions")
+    print("   c) Training models sequentially")
+    print("   d) Using bootstrap samples")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Stacking uses a meta-learner")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Stacking learns how to combine base models")
+    
+    # Question 4
+    print("\n4. Which ensemble method handles categorical features natively?")
+    print("   a) XGBoost")
+    print("   b) LightGBM")
+    print("   c) CatBoost")
+    print("   d) All of the above")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "c":
+        print("   ✅ Correct! CatBoost has the best native categorical support")
+        score += 1
+    else:
+        print("   ❌ Incorrect. CatBoost was designed for categorical features")
+    
+    # Question 5
+    print("\n5. What does early stopping do in gradient boosting?")
+    print("   a) Stops training when validation performance stops improving")
+    print("   b) Stops training after fixed iterations")
+    print("   c) Stops training when overfitting starts")
+    print("   d) Both a and c")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "d":
+        print("   ✅ Correct! Early stopping prevents overfitting")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Early stopping monitors validation performance")
+    
+    # Question 6
+    print("\n6. What is the difference between hard voting and soft voting?")
+    print("   a) Hard voting uses majority vote, soft uses average probabilities")
+    print("   b) Hard voting is for classification, soft for regression")
+    print("   c) There is no difference")
+    print("   d) Hard voting is faster")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "a":
+        print("   ✅ Correct! Soft voting uses probability averages")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Soft voting uses predicted probabilities")
+    
+    # Question 7
+    print("\n7. Which parameter in XGBoost controls the learning rate?")
+    print("   a) max_depth")
+    print("   b) n_estimators")
+    print("   c) eta (or learning_rate)")
+    print("   d) subsample")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "c":
+        print("   ✅ Correct! eta is the learning rate in XGBoost")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Learning rate controls step size in gradient descent")
+    
+    # Question 8
+    print("\n8. What is the purpose of the 'subsample' parameter in gradient boosting?")
+    print("   a) Controls feature sampling")
+    print("   b) Controls row sampling (stochastic gradient boosting)")
+    print("   c) Controls tree depth")
+    print("   d) Controls learning rate")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Subsample controls row sampling fraction")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Subsample adds randomness to prevent overfitting")
+    
+    # Question 9
+    print("\n9. Which ensemble method would you choose for a dataset with 1 million rows?")
+    print("   a) Random Forest")
+    print("   b) XGBoost")
+    print("   c) LightGBM")
+    print("   d) Gradient Boosting")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "c":
+        print("   ✅ Correct! LightGBM is optimized for large datasets")
+        score += 1
+    else:
+        print("   ❌ Incorrect. LightGBM's histogram-based algorithm scales well")
+    
+    # Question 10
+    print("\n10. What is the role of the meta-learner in stacking?")
+    print("    a) To make final predictions based on base model outputs")
+    print("    b) To train the base models")
+    print("    c) To select features")
+    print("    d) To tune hyperparameters")
+    answer = input("    Your answer (a/b/c/d): ").lower()
+    if answer == "a":
+        print("    ✅ Correct! Meta-learner combines base predictions")
+        score += 1
+    else:
+        print("    ❌ Incorrect. Meta-learner learns how to combine base models")
+    
+    # Final score
+    print("\n" + "="*50)
+    print(f"QUIZ COMPLETE! Your score: {score}/{total}")
+    print("="*50)
+    
+    if score == total:
+        print("🏆 Perfect! You're an ensemble methods expert!")
+    elif score >= 8:
+        print("🌟 Great job! You have a solid understanding!")
+    elif score >= 6:
+        print("📚 Good effort! Review the topics you missed.")
+    else:
+        print("💪 Keep practicing! These concepts take time to master.")
+
+if __name__ == "__main__":
+    quiz()
+
 
