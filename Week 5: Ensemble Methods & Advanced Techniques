@@ -1900,4 +1900,22 @@ def quiz():
 if __name__ == "__main__":
     quiz()
 
+✅ Week 5 Completion Checklist
+Understood bagging vs boosting vs stacking
+
+Mastered XGBoost and its parameters
+
+Implemented LightGBM for faster training
+
+Used CatBoost for categorical features
+
+Built voting classifiers with different strategies
+
+Implemented stacking with meta-learners
+
+Tuned hyperparameters for ensemble models
+
+Compared ensemble methods on real data
+
+Completed house price prediction project
 
