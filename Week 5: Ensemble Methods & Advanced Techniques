@@ -793,6 +793,307 @@ y_pred_loaded = loaded_model.predict(X_test)
 acc_loaded = accuracy_score(y_test, y_pred_loaded)
 print(f"Loaded model accuracy: {acc_loaded:.4f}")
 
+Exercise 4: CatBoost - Categorical Boosting
+# catboost_tutorial.py
+"""
+CatBoost - Categorical Boosting
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import time
+from sklearn.datasets import make_classification
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import accuracy_score, classification_report
+import warnings
+warnings.filterwarnings('ignore')
+
+# Install catboost if not already installed
+# pip install catboost
+
+from catboost import CatBoostClassifier, CatBoostRegressor, Pool
+from catboost import cv
+
+print("="*60)
+print("CATBOOST - CATEGORICAL BOOSTING")
+print("="*60)
+
+# 1. Create dataset with categorical features
+print("\n1. CREATING DATASET WITH CATEGORICAL FEATURES:")
+
+np.random.seed(42)
+n_samples = 5000
+
+# Numerical features
+X_num = np.random.randn(n_samples, 5)
+
+# Categorical features
+cat_feat1 = np.random.choice(['Red', 'Blue', 'Green', 'Yellow'], n_samples)
+cat_feat2 = np.random.choice(['Small', 'Medium', 'Large'], n_samples)
+cat_feat3 = np.random.choice(['Yes', 'No'], n_samples)
+
+# Create target with some dependence on categorical features
+y = (
+    0.3 * X_num[:, 0] + 
+    0.2 * X_num[:, 1] + 
+    (cat_feat1 == 'Red') * 1.5 +
+    (cat_feat2 == 'Large') * 1.0 +
+    (cat_feat3 == 'Yes') * 0.5 +
+    np.random.randn(n_samples) * 0.5 > 0
+).astype(int)
+
+# Create DataFrame
+df = pd.DataFrame({
+    **{f'num_{i}': X_num[:, i] for i in range(5)},
+    'color': cat_feat1,
+    'size': cat_feat2,
+    'flag': cat_feat3,
+    'target': y
+})
+
+print(f"Dataset shape: {df.shape}")
+print(f"\nFirst few rows:")
+print(df.head())
+
+print(f"\nCategorical features info:")
+print(f"color: {df['color'].unique()}")
+print(f"size: {df['size'].unique()}")
+print(f"flag: {df['flag'].unique()}")
+
+# 2. Prepare data for CatBoost
+print("\n2. PREPARING DATA FOR CATBOOST:")
+
+# Separate features and target
+X = df.drop('target', axis=1)
+y = df['target']
+
+# Identify categorical features
+cat_features = ['color', 'size', 'flag']
+cat_features_indices = [X.columns.get_loc(col) for col in cat_features]
+
+print(f"Categorical feature indices: {cat_features_indices}")
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# 3. Train CatBoost with automatic categorical handling
+print("\n3. TRAINING CATBOOST MODEL:")
+
+catboost_model = CatBoostClassifier(
+    iterations=500,
+    learning_rate=0.1,
+    depth=6,
+    cat_features=cat_features_indices,
+    verbose=100,
+    random_seed=42
+)
+
+start_time = time.time()
+catboost_model.fit(X_train, y_train)
+train_time = time.time() - start_time
+
+print(f"\nTraining time: {train_time:.4f} seconds")
+
+# 4. Evaluate model
+print("\n4. EVALUATING MODEL:")
+
+y_pred = catboost_model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy:.4f}")
+
+print("\nClassification Report:")
+print(classification_report(y_test, y_pred))
+
+# 5. Feature Importance
+print("\n5. FEATURE IMPORTANCE:")
+
+importance = catboost_model.get_feature_importance()
+feature_names = X.columns
+
+# Sort by importance
+indices = np.argsort(importance)[::-1]
+
+plt.figure(figsize=(12, 6))
+plt.barh(range(10), importance[indices[:10]][::-1])
+plt.yticks(range(10), [feature_names[i] for i in indices[:10]][::-1])
+plt.xlabel('Importance')
+plt.title('CatBoost Feature Importance (Top 10)')
+plt.grid(True, alpha=0.3, axis='x')
+plt.savefig('catboost_importance.png')
+plt.show()
+print("✅ Feature importance saved as 'catboost_importance.png'")
+
+# 6. Compare with one-hot encoding approach
+print("\n6. COMPARING WITH ONE-HOT ENCODING:")
+
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestClassifier
+
+# One-hot encoding
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', 'passthrough', [col for col in X.columns if col not in cat_features]),
+        ('cat', OneHotEncoder(drop='first'), cat_features)
+    ])
+
+pipeline = Pipeline([
+    ('preprocessor', preprocessor),
+    ('classifier', RandomForestClassifier(n_estimators=100, random_state=42))
+])
+
+start_time = time.time()
+pipeline.fit(X_train, y_train)
+sklearn_time = time.time() - start_time
+
+y_pred_sk = pipeline.predict(X_test)
+accuracy_sk = accuracy_score(y_test, y_pred_sk)
+
+print(f"One-hot + RandomForest time: {sklearn_time:.4f} seconds")
+print(f"One-hot + RandomForest accuracy: {accuracy_sk:.4f}")
+print(f"CatBoost time: {train_time:.4f} seconds")
+print(f"CatBoost accuracy: {accuracy:.4f}")
+print(f"CatBoost is {sklearn_time/train_time:.2f}x faster")
+
+# 7. Cross-validation
+print("\n7. CROSS-VALIDATION:")
+
+# Use Pool for efficient cross-validation
+train_pool = Pool(X_train, y_train, cat_features=cat_features_indices)
+
+cv_data = cv(
+    train_pool,
+    catboost_model.get_params(),
+    fold_count=5,
+    shuffle=True,
+    verbose=False
+)
+
+print("Cross-validation results:")
+print(f"  Mean accuracy: {cv_data['test-Accuracy-mean'].values[-1]:.4f}")
+print(f"  Std accuracy: {cv_data['test-Accuracy-std'].values[-1]:.4f}")
+
+# 8. Hyperparameter Tuning
+print("\n8. HYPERPARAMETER TUNING:")
+
+# Simple grid search manually
+learning_rates = [0.03, 0.1, 0.3]
+depths = [4, 6, 8]
+
+results = []
+for lr in learning_rates:
+    for depth in depths:
+        model = CatBoostClassifier(
+            iterations=100,
+            learning_rate=lr,
+            depth=depth,
+            cat_features=cat_features_indices,
+            verbose=0,
+            random_seed=42
+        )
+        
+        # Cross-validation
+        cv_scores = cross_val_score(model, X_train, y_train, cv=3, scoring='accuracy')
+        
+        results.append({
+            'learning_rate': lr,
+            'depth': depth,
+            'mean_score': cv_scores.mean(),
+            'std_score': cv_scores.std()
+        })
+
+results_df = pd.DataFrame(results)
+print("\nGrid Search Results:")
+print(results_df.sort_values('mean_score', ascending=False))
+
+best_params = results_df.loc[results_df['mean_score'].idxmax()]
+print(f"\nBest parameters: LR={best_params['learning_rate']}, Depth={best_params['depth']}")
+print(f"Best CV score: {best_params['mean_score']:.4f}")
+
+# 9. CatBoost for Regression
+print("\n9. CATBOOST REGRESSION:")
+
+from sklearn.datasets import fetch_california_housing
+
+housing = fetch_california_housing()
+X_h, y_h = housing.data, housing.target
+
+# Add categorical feature for demonstration
+cat_feat_h = np.random.choice(['A', 'B', 'C'], size=len(X_h))
+X_h_df = pd.DataFrame(X_h, columns=housing.feature_names)
+X_h_df['cat_feat'] = cat_feat_h
+
+X_train_h, X_test_h, y_train_h, y_test_h = train_test_split(
+    X_h_df, y_h, test_size=0.2, random_state=42
+)
+
+# Train CatBoost regressor
+catboost_reg = CatBoostRegressor(
+    iterations=500,
+    learning_rate=0.1,
+    depth=6,
+    cat_features=['cat_feat'],
+    verbose=0,
+    random_seed=42
+)
+
+catboost_reg.fit(X_train_h, y_train_h)
+y_pred_h = catboost_reg.predict(X_test_h)
+
+from sklearn.metrics import mean_squared_error, r2_score
+mse = mean_squared_error(y_test_h, y_pred_h)
+rmse = np.sqrt(mse)
+r2 = r2_score(y_test_h, y_pred_h)
+
+print(f"CatBoost Regression Results:")
+print(f"  MSE: {mse:.4f}")
+print(f"  RMSE: {rmse:.4f}")
+print(f"  R²: {r2:.4f}")
+
+# 10. Model Interpretation
+print("\n10. MODEL INTERPRETATION:")
+
+# Get SHAP values for interpretation (requires shap library)
+# pip install shap
+
+try:
+    import shap
+    
+    # Create explainer
+    explainer = shap.TreeExplainer(catboost_model)
+    
+    # Get SHAP values for a subset
+    shap_values = explainer.shap_values(X_test.iloc[:100])
+    
+    # Summary plot
+    plt.figure(figsize=(12, 6))
+    shap.summary_plot(shap_values, X_test.iloc[:100], feature_names=X.columns, show=False)
+    plt.tight_layout()
+    plt.savefig('catboost_shap.png')
+    plt.show()
+    print("✅ SHAP analysis saved as 'catboost_shap.png'")
+    
+except ImportError:
+    print("SHAP library not installed. Install with: pip install shap")
+
+# 11. Save and Load Model
+print("\n11. SAVING AND LOADING MODEL:")
+
+# Save model
+catboost_model.save_model('catboost_model.cbm')
+print("✅ Model saved as 'catboost_model.cbm'")
+
+# Load model
+loaded_model = CatBoostClassifier()
+loaded_model.load_model('catboost_model.cbm')
+y_pred_loaded = loaded_model.predict(X_test)
+acc_loaded = accuracy_score(y_test, y_pred_loaded)
+print(f"Loaded model accuracy: {acc_loaded:.4f}")
+
 
 
 
