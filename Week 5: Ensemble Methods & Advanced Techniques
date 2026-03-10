@@ -1331,5 +1331,410 @@ if hasattr(best_stacking_model.final_estimator_, 'coef_'):
     plt.show()
     print("✅ Meta-learner importance saved as 'stacking_meta_importance.png'")
 
+📝 Weekly Project: House Price Prediction with Ensemble Methods
+# week5_project.py
+"""
+WEEK 5 PROJECT: House Price Prediction with Ensemble Methods
+Compare XGBoost, LightGBM, CatBoost, and Stacking
+"""
 
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import time
+from sklearn.datasets import fetch_california_housing
+from sklearn.model_selection import train_test_split, cross_val_score, GridSearchCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, StackingRegressor
+from sklearn.linear_model import Ridge, Lasso
+import warnings
+warnings.filterwarnings('ignore')
+
+# Install required packages if not already installed
+# pip install xgboost lightgbm catboost
+
+import xgboost as xgb
+import lightgbm as lgb
+from catboost import CatBoostRegressor
+
+print("="*70)
+print("WEEK 5 PROJECT: HOUSE PRICE PREDICTION WITH ENSEMBLE METHODS")
+print("="*70)
+
+# 1. Load and explore dataset
+print("\n1. LOADING AND EXPLORING DATASET:")
+
+housing = fetch_california_housing()
+X, y = housing.data, housing.target
+feature_names = housing.feature_names
+
+df = pd.DataFrame(X, columns=feature_names)
+df['MedHouseVal'] = y
+
+print(f"Dataset shape: {df.shape}")
+print(f"\nFeature names: {feature_names}")
+print(f"\nFirst few rows:")
+print(df.head())
+
+print("\nDataset statistics:")
+print(df.describe())
+
+# 2. Exploratory Data Analysis
+print("\n2. EXPLORATORY DATA ANALYSIS:")
+
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+for i, feature in enumerate(feature_names[:6]):
+    ax = axes[i // 3, i % 3]
+    ax.scatter(df[feature], df['MedHouseVal'], alpha=0.3, s=10)
+    ax.set_xlabel(feature)
+    ax.set_ylabel('Median House Value')
+    ax.set_title(f'{feature} vs Price')
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('project_feature_relationships.png')
+plt.show()
+print("✅ Feature relationships saved as 'project_feature_relationships.png'")
+
+# Correlation matrix
+plt.figure(figsize=(10, 8))
+corr = df.corr()
+sns.heatmap(corr, annot=True, cmap='coolwarm', center=0, fmt='.2f',
+            square=True, linewidths=1)
+plt.title('Feature Correlation Matrix')
+plt.tight_layout()
+plt.savefig('project_correlation.png')
+plt.show()
+print("✅ Correlation matrix saved as 'project_correlation.png'")
+
+# 3. Data Preparation
+print("\n3. DATA PREPARATION:")
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+print(f"Training set: {X_train.shape}")
+print(f"Test set: {X_test.shape}")
+
+# Scale features (important for some models)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 4. Define models
+print("\n4. DEFINING MODELS:")
+
+models = {
+    'Random Forest': RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1),
+    'Gradient Boosting': GradientBoostingRegressor(n_estimators=100, random_state=42),
+    'XGBoost': xgb.XGBRegressor(n_estimators=100, learning_rate=0.1, random_state=42),
+    'LightGBM': lgb.LGBMRegressor(n_estimators=100, learning_rate=0.1, random_state=42, verbose=-1),
+    'CatBoost': CatBoostRegressor(iterations=100, learning_rate=0.1, verbose=0, random_seed=42)
+}
+
+# 5. Train and evaluate models
+print("\n5. TRAINING AND EVALUATING MODELS:")
+
+results = {}
+predictions = {}
+training_times = {}
+
+for name, model in models.items():
+    print(f"\n{name}:")
+    
+    # Train
+    start_time = time.time()
+    model.fit(X_train_scaled if name != 'CatBoost' else X_train, y_train)
+    train_time = time.time() - start_time
+    training_times[name] = train_time
+    
+    # Predict
+    if name == 'CatBoost':
+        y_pred = model.predict(X_test)
+    else:
+        y_pred = model.predict(X_test_scaled)
+    
+    # Calculate metrics
+    mse = mean_squared_error(y_test, y_pred)
+    rmse = np.sqrt(mse)
+    mae = mean_absolute_error(y_test, y_pred)
+    r2 = r2_score(y_test, y_pred)
+    
+    results[name] = {
+        'MSE': mse,
+        'RMSE': rmse,
+        'MAE': mae,
+        'R2': r2,
+        'Time': train_time
+    }
+    
+    predictions[name] = y_pred
+    
+    print(f"  RMSE: {rmse:.4f}")
+    print(f"  MAE: {mae:.4f}")
+    print(f"  R²: {r2:.4f}")
+    print(f"  Training time: {train_time:.4f}s")
+
+# 6. Stacking Regressor
+print("\n6. STACKING REGRESSOR:")
+
+# Base learners
+base_learners = [
+    ('rf', RandomForestRegressor(n_estimators=100, random_state=42)),
+    ('gb', GradientBoostingRegressor(n_estimators=100, random_state=42)),
+    ('xgb', xgb.XGBRegressor(n_estimators=100, random_state=42))
+]
+
+# Meta-learners to try
+meta_learners = {
+    'Ridge': Ridge(alpha=1.0),
+    'Lasso': Lasso(alpha=0.001)
+}
+
+stacking_results = {}
+for meta_name, meta_model in meta_learners.items():
+    stacking = StackingRegressor(
+        estimators=base_learners,
+        final_estimator=meta_model,
+        cv=5
+    )
+    
+    start_time = time.time()
+    stacking.fit(X_train_scaled, y_train)
+    train_time = time.time() - start_time
+    
+    y_pred = stacking.predict(X_test_scaled)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    r2 = r2_score(y_test, y_pred)
+    
+    stacking_results[meta_name] = {
+        'RMSE': rmse,
+        'R2': r2,
+        'Time': train_time
+    }
+    
+    print(f"\nStacking with {meta_name}:")
+    print(f"  RMSE: {rmse:.4f}")
+    print(f"  R²: {r2:.4f}")
+    print(f"  Training time: {train_time:.4f}s")
+
+# 7. Performance Comparison
+print("\n7. PERFORMANCE COMPARISON:")
+
+# Create comparison DataFrame
+comparison = pd.DataFrame(results).T
+comparison = comparison.sort_values('RMSE')
+
+print("\nModels ranked by RMSE:")
+print(comparison[['RMSE', 'MAE', 'R2', 'Time']].round(4))
+
+# Add stacking results
+for meta_name, metrics in stacking_results.items():
+    comparison.loc[f'Stacking ({meta_name})'] = [
+        metrics['RMSE']**2, metrics['RMSE'], metrics['RMSE']*0.8,  # Approx MAE
+        metrics['R2'], metrics['Time']
+    ]
+
+# 8. Visualize Results
+print("\n8. VISUALIZING RESULTS:")
+
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+# RMSE Comparison
+ax1 = axes[0, 0]
+models_names = comparison.index
+rmse_values = comparison['RMSE'].values
+colors = ['blue', 'green', 'orange', 'red', 'purple', 'brown', 'pink'][:len(models_names)]
+
+bars = ax1.barh(models_names, rmse_values, color=colors, edgecolor='black')
+ax1.set_xlabel('RMSE')
+ax1.set_title('Model Comparison - RMSE (lower is better)')
+ax1.grid(True, alpha=0.3, axis='x')
+
+# R² Comparison
+ax2 = axes[0, 1]
+r2_values = comparison['R2'].values
+bars = ax2.barh(models_names, r2_values, color=colors, edgecolor='black')
+ax2.set_xlabel('R² Score')
+ax2.set_title('Model Comparison - R² (higher is better)')
+ax2.grid(True, alpha=0.3, axis='x')
+ax2.set_xlim([0, 1])
+
+# Training Time
+ax3 = axes[1, 0]
+time_values = comparison['Time'].values
+bars = ax3.barh(models_names, time_values, color=colors, edgecolor='black')
+ax3.set_xlabel('Training Time (seconds)')
+ax3.set_title('Model Comparison - Training Time')
+ax3.grid(True, alpha=0.3, axis='x')
+
+# Predictions vs Actual (best model)
+best_model = comparison['RMSE'].idxmin()
+ax4 = axes[1, 1]
+y_pred_best = predictions.get(best_model, stacking_results.get(best_model.split()[-1], {}))
+if isinstance(y_pred_best, dict):
+    # Handle stacking predictions
+    pass
+else:
+    ax4.scatter(y_test, y_pred_best, alpha=0.5, s=10)
+    ax4.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', linewidth=2)
+    ax4.set_xlabel('Actual Values')
+    ax4.set_ylabel('Predicted Values')
+    ax4.set_title(f'Best Model: {best_model}\nPredictions vs Actual')
+    ax4.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('project_model_comparison.png')
+plt.show()
+print("✅ Model comparison saved as 'project_model_comparison.png'")
+
+# 9. Feature Importance (from best tree-based model)
+print("\n9. FEATURE IMPORTANCE:")
+
+# Find best tree-based model
+tree_models = ['Random Forest', 'Gradient Boosting', 'XGBoost', 'LightGBM']
+available_tree_models = [m for m in tree_models if m in models]
+
+for model_name in available_tree_models:
+    model = models[model_name]
+    if hasattr(model, 'feature_importances_'):
+        importance = model.feature_importances_
+        
+        plt.figure(figsize=(10, 6))
+        indices = np.argsort(importance)[::-1]
+        plt.barh(range(len(feature_names)), importance[indices][::-1])
+        plt.yticks(range(len(feature_names)), [feature_names[i] for i in indices][::-1])
+        plt.xlabel('Importance')
+        plt.title(f'{model_name} Feature Importance')
+        plt.grid(True, alpha=0.3, axis='x')
+        plt.tight_layout()
+        plt.savefig(f'project_importance_{model_name.replace(" ", "_")}.png')
+        plt.show()
+        print(f"✅ {model_name} importance saved")
+        break
+
+# 10. Residual Analysis
+print("\n10. RESIDUAL ANALYSIS:")
+
+# Use best model for residual analysis
+best_model_name = comparison['RMSE'].idxmin()
+if best_model_name in models:
+    best_model = models[best_model_name]
+    if best_model_name == 'CatBoost':
+        y_pred_best = best_model.predict(X_test)
+    else:
+        y_pred_best = best_model.predict(X_test_scaled)
+    
+    residuals = y_test - y_pred_best
+    
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    
+    # Residuals vs Predicted
+    axes[0].scatter(y_pred_best, residuals, alpha=0.5, s=10)
+    axes[0].axhline(y=0, color='r', linestyle='--', linewidth=2)
+    axes[0].set_xlabel('Predicted Values')
+    axes[0].set_ylabel('Residuals')
+    axes[0].set_title(f'Residual Plot - {best_model_name}')
+    axes[0].grid(True, alpha=0.3)
+    
+    # Histogram of residuals
+    axes[1].hist(residuals, bins=50, edgecolor='black', alpha=0.7)
+    axes[1].axvline(x=0, color='r', linestyle='--', linewidth=2)
+    axes[1].set_xlabel('Residuals')
+    axes[1].set_ylabel('Frequency')
+    axes[1].set_title('Residual Distribution')
+    axes[1].grid(True, alpha=0.3, axis='y')
+    
+    plt.tight_layout()
+    plt.savefig('project_residuals.png')
+    plt.show()
+    print("✅ Residual analysis saved as 'project_residuals.png'")
+
+# 11. Hyperparameter Tuning for Best Model
+print("\n11. HYPERPARAMETER TUNING FOR BEST MODEL:")
+
+if best_model_name in models:
+    print(f"Tuning {best_model_name}...")
+    
+    if best_model_name == 'XGBoost':
+        param_grid = {
+            'n_estimators': [100, 200],
+            'max_depth': [3, 6, 9],
+            'learning_rate': [0.01, 0.1, 0.3]
+        }
+        model_to_tune = xgb.XGBRegressor(random_state=42)
+        
+    elif best_model_name == 'LightGBM':
+        param_grid = {
+            'n_estimators': [100, 200],
+            'max_depth': [5, 10, -1],
+            'learning_rate': [0.05, 0.1, 0.2]
+        }
+        model_to_tune = lgb.LGBMRegressor(random_state=42, verbose=-1)
+        
+    elif best_model_name == 'Random Forest':
+        param_grid = {
+            'n_estimators': [100, 200],
+            'max_depth': [10, 20, None],
+            'min_samples_split': [2, 5, 10]
+        }
+        model_to_tune = RandomForestRegressor(random_state=42)
+        
+    else:
+        param_grid = {}
+        model_to_tune = None
+    
+    if model_to_tune and param_grid:
+        # Use smaller grid for speed
+        simple_grid = {k: v[:2] for k, v in param_grid.items()}
+        
+        grid_search = GridSearchCV(
+            model_to_tune,
+            simple_grid,
+            cv=3,
+            scoring='neg_mean_squared_error',
+            n_jobs=-1,
+            verbose=1
+        )
+        
+        grid_search.fit(X_train_scaled, y_train)
+        
+        print(f"\nBest parameters: {grid_search.best_params_}")
+        print(f"Best CV score (-RMSE): {np.sqrt(-grid_search.best_score_):.4f}")
+        
+        # Evaluate tuned model
+        y_pred_tuned = grid_search.predict(X_test_scaled)
+        rmse_tuned = np.sqrt(mean_squared_error(y_test, y_pred_tuned))
+        print(f"Test RMSE with tuned model: {rmse_tuned:.4f}")
+        print(f"Improvement: {comparison.loc[best_model_name, 'RMSE'] - rmse_tuned:.4f}")
+
+# 12. Save Results
+print("\n12. SAVING RESULTS:")
+
+# Save comparison
+comparison.to_csv('ensemble_comparison.csv')
+print("✅ Comparison saved to 'ensemble_comparison.csv'")
+
+# Save predictions
+predictions_df = pd.DataFrame({
+    'Actual': y_test,
+    **{name: pred for name, pred in predictions.items()}
+})
+predictions_df.to_csv('ensemble_predictions.csv', index=False)
+print("✅ Predictions saved to 'ensemble_predictions.csv'")
+
+# Save best model
+import joblib
+if best_model_name in models:
+    joblib.dump(models[best_model_name], f'best_model_{best_model_name}.pkl')
+    print(f"✅ Best model ({best_model_name}) saved")
+
+print("\n" + "="*70)
+print("✅ PROJECT COMPLETED SUCCESSFULLY!")
+print("="*70)
 
