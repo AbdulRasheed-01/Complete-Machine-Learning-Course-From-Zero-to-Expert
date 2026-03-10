@@ -506,6 +506,293 @@ plt.grid(True, alpha=0.3)
 plt.savefig('xgboost_training_history.png')
 plt.show()
 print("✅ Training history saved as 'xgboost_training_history.png'")
+Exercise 3: LightGBM - Light Gradient Boosting Machine
+# lightgbm_tutorial.py
+"""
+LightGBM - Light Gradient Boosting Machine
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import time
+from sklearn.datasets import make_classification, fetch_california_housing
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import accuracy_score, mean_squared_error, r2_score
+import warnings
+warnings.filterwarnings('ignore')
+
+# Install lightgbm if not already installed
+# pip install lightgbm
+
+import lightgbm as lgb
+
+print("="*60)
+print("LIGHTGBM - LIGHT GRADIENT BOOSTING MACHINE")
+print("="*60)
+
+# 1. LightGBM for Classification
+print("\n1. LIGHTGBM CLASSIFICATION:")
+
+# Generate dataset
+X, y = make_classification(
+    n_samples=10000, n_features=20, n_informative=15,
+    n_redundant=5, random_state=42
+)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+print(f"Training set: {X_train.shape}")
+print(f"Test set: {X_test.shape}")
+
+# Train LightGBM
+lgb_classifier = lgb.LGBMClassifier(
+    n_estimators=100,
+    max_depth=6,
+    learning_rate=0.1,
+    num_leaves=31,
+    random_state=42
+)
+
+start_time = time.time()
+lgb_classifier.fit(X_train, y_train)
+train_time = time.time() - start_time
+
+y_pred = lgb_classifier.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
+
+print(f"Training time: {train_time:.4f} seconds")
+print(f"Accuracy: {accuracy:.4f}")
+
+# 2. Compare with XGBoost speed
+print("\n2. SPEED COMPARISON (XGBoost vs LightGBM):")
+
+import xgboost as xgb
+
+# XGBoost
+xgb_classifier = xgb.XGBClassifier(
+    n_estimators=100,
+    max_depth=6,
+    learning_rate=0.1,
+    random_state=42
+)
+
+start_time = time.time()
+xgb_classifier.fit(X_train, y_train)
+xgb_time = time.time() - start_time
+
+# LightGBM (already trained)
+print(f"XGBoost training time: {xgb_time:.4f} seconds")
+print(f"LightGBM training time: {train_time:.4f} seconds")
+print(f"LightGBM is {xgb_time/train_time:.2f}x faster")
+
+# 3. LightGBM with Categorical Features
+print("\n3. LIGHTGBM WITH CATEGORICAL FEATURES:")
+
+# Create dataset with categorical features
+np.random.seed(42)
+n_samples = 1000
+X_cat = np.random.randn(n_samples, 5)
+cat_feature = np.random.choice(['A', 'B', 'C', 'D'], size=n_samples)
+y_cat = (X_cat[:, 0] + X_cat[:, 1] + (cat_feature == 'C') * 2 > 0).astype(int)
+
+# Convert to DataFrame for categorical handling
+df_cat = pd.DataFrame(X_cat, columns=[f'num_{i}' for i in range(5)])
+df_cat['cat_feature'] = cat_feature
+
+# Specify categorical features
+categorical_features = ['cat_feature']
+
+# One-hot encoding (traditional approach)
+df_encoded = pd.get_dummies(df_cat, columns=['cat_feature'])
+X_encoded = df_encoded.values
+
+X_train_e, X_test_e, y_train_e, y_test_e = train_test_split(
+    X_encoded, y_cat, test_size=0.2, random_state=42
+)
+
+# Train with encoded features
+lgb_encoded = lgb.LGBMClassifier(n_estimators=100, random_state=42)
+lgb_encoded.fit(X_train_e, y_train_e)
+y_pred_e = lgb_encoded.predict(X_test_e)
+acc_encoded = accuracy_score(y_test_e, y_pred_e)
+
+# LightGBM native categorical support
+lgb_native = lgb.LGBMClassifier(n_estimators=100, random_state=42)
+lgb_native.fit(
+    df_cat, y_cat,
+    categorical_feature=categorical_features
+)
+y_pred_native = lgb_native.predict(df_cat.iloc[X_test.index])
+acc_native = accuracy_score(y_test_e, y_pred_native)  # Same test set
+
+print(f"Accuracy with one-hot encoding: {acc_encoded:.4f}")
+print(f"Accuracy with native categorical: {acc_native:.4f}")
+
+# 4. Feature Importance
+print("\n4. FEATURE IMPORTANCE:")
+
+importance = lgb_classifier.feature_importances_
+indices = np.argsort(importance)[::-1]
+
+plt.figure(figsize=(12, 6))
+plt.barh(range(10), importance[indices[:10]][::-1])
+plt.yticks(range(10), [f'Feature {i}' for i in indices[:10]][::-1])
+plt.xlabel('Importance')
+plt.title('LightGBM Feature Importance (Top 10)')
+plt.grid(True, alpha=0.3, axis='x')
+plt.savefig('lightgbm_importance.png')
+plt.show()
+print("✅ Feature importance saved as 'lightgbm_importance.png'")
+
+# 5. LightGBM for Regression
+print("\n5. LIGHTGBM REGRESSION:")
+
+housing = fetch_california_housing()
+X_h, y_h = housing.data, housing.target
+
+X_train_h, X_test_h, y_train_h, y_test_h = train_test_split(
+    X_h, y_h, test_size=0.2, random_state=42
+)
+
+lgb_regressor = lgb.LGBMRegressor(
+    n_estimators=100,
+    max_depth=6,
+    learning_rate=0.1,
+    random_state=42
+)
+
+lgb_regressor.fit(X_train_h, y_train_h)
+y_pred_h = lgb_regressor.predict(X_test_h)
+
+mse = mean_squared_error(y_test_h, y_pred_h)
+rmse = np.sqrt(mse)
+r2 = r2_score(y_test_h, y_pred_h)
+
+print(f"LightGBM Regression Results:")
+print(f"  MSE: {mse:.4f}")
+print(f"  RMSE: {rmse:.4f}")
+print(f"  R²: {r2:.4f}")
+
+# 6. Early Stopping
+print("\n6. EARLY STOPPING:")
+
+lgb_early = lgb.LGBMClassifier(
+    n_estimators=1000,
+    max_depth=6,
+    learning_rate=0.1,
+    early_stopping_rounds=10,
+    random_state=42
+)
+
+lgb_early.fit(
+    X_train, y_train,
+    eval_set=[(X_test, y_test)],
+    eval_metric='logloss',
+    callbacks=[lgb.early_stopping(10)]
+)
+
+print(f"Best iteration: {lgb_early.best_iteration_}")
+
+# 7. Hyperparameter Tuning
+print("\n7. HYPERPARAMETER TUNING:")
+
+param_grid = {
+    'num_leaves': [31, 50, 70],
+    'max_depth': [5, 10, -1],
+    'learning_rate': [0.05, 0.1, 0.2],
+    'n_estimators': [50, 100]
+}
+
+# Smaller grid for demonstration
+simple_grid = {
+    'num_leaves': [31, 50],
+    'max_depth': [6, 10],
+    'learning_rate': [0.1]
+}
+
+print("Performing grid search (this may take a moment)...")
+grid_search = GridSearchCV(
+    lgb.LGBMClassifier(random_state=42),
+    simple_grid,
+    cv=3,
+    scoring='accuracy',
+    n_jobs=-1,
+    verbose=1
+)
+grid_search.fit(X_train, y_train)
+
+print(f"\nBest parameters: {grid_search.best_params_}")
+print(f"Best CV score: {grid_search.best_score_:.4f}")
+
+# 8. Learning Curves
+print("\n8. LEARNING CURVES:")
+
+from sklearn.model_selection import learning_curve
+
+train_sizes, train_scores, test_scores = learning_curve(
+    lgb.LGBMClassifier(n_estimators=100, random_state=42),
+    X_train, y_train,
+    cv=5,
+    train_sizes=np.linspace(0.1, 1.0, 10),
+    scoring='accuracy'
+)
+
+train_mean = np.mean(train_scores, axis=1)
+train_std = np.std(train_scores, axis=1)
+test_mean = np.mean(test_scores, axis=1)
+test_std = np.std(test_scores, axis=1)
+
+plt.figure(figsize=(10, 6))
+plt.fill_between(train_sizes, train_mean - train_std, train_mean + train_std, alpha=0.1, color='blue')
+plt.fill_between(train_sizes, test_mean - test_std, test_mean + test_std, alpha=0.1, color='orange')
+plt.plot(train_sizes, train_mean, 'o-', color='blue', label='Training score')
+plt.plot(train_sizes, test_mean, 'o-', color='orange', label='Cross-validation score')
+plt.xlabel('Training Examples')
+plt.ylabel('Accuracy')
+plt.title('LightGBM Learning Curves')
+plt.legend(loc='best')
+plt.grid(True, alpha=0.3)
+plt.savefig('lightgbm_learning_curves.png')
+plt.show()
+print("✅ Learning curves saved as 'lightgbm_learning_curves.png'")
+
+# 9. Parallel Processing
+print("\n9. PARALLEL PROCESSING:")
+
+# Single thread
+lgb_single = lgb.LGBMClassifier(n_estimators=100, num_threads=1, random_state=42)
+start = time.time()
+lgb_single.fit(X_train, y_train)
+single_time = time.time() - start
+
+# Multi-thread
+lgb_multi = lgb.LGBMClassifier(n_estimators=100, num_threads=-1, random_state=42)
+start = time.time()
+lgb_multi.fit(X_train, y_train)
+multi_time = time.time() - start
+
+print(f"Single thread time: {single_time:.4f} seconds")
+print(f"Multi-thread time: {multi_time:.4f} seconds")
+print(f"Speedup: {single_time/multi_time:.2f}x")
+
+# 10. Save and Load Model
+print("\n10. SAVING AND LOADING MODEL:")
+
+import joblib
+
+# Save model
+joblib.dump(lgb_classifier, 'lightgbm_model.pkl')
+print("✅ Model saved as 'lightgbm_model.pkl'")
+
+# Load model
+loaded_model = joblib.load('lightgbm_model.pkl')
+y_pred_loaded = loaded_model.predict(X_test)
+acc_loaded = accuracy_score(y_test, y_pred_loaded)
+print(f"Loaded model accuracy: {acc_loaded:.4f}")
+
 
 
 
