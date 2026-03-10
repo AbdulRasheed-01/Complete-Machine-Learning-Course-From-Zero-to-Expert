@@ -21,3 +21,13 @@ By the end of this week, you will be able to:
 ✅ Deploy ensemble models in production
 📚 Theory Content
 Gradient Boosting Algorithms Comparison
+
+Algorithm	           |       Speed	       |   Accuracy	         |           Categorical Support	    |      Memory Usage
+
+XGBoost	             |       Fast	         |   Excellent	       |           Requires encoding	      |      Moderate
+
+LightGBM	           |       Very Fast	   |   Excellent	       |           Native support	          |      Low
+
+CatBoost	           |       Moderate	     |   Excellent	       |           Native (best)	          |      High
+
+HistGradientBoosting |       Fast	         |   Good	             |           Requires encoding	      |      Low
