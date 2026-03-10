@@ -31,3 +31,6 @@ LightGBM	           |       Very Fast	   |   Excellent	       |           Native
 CatBoost	           |       Moderate	     |   Excellent	       |           Native (best)	          |      High
 
 HistGradientBoosting |       Fast	         |   Good	             |           Requires encoding	      |      Low
+
+🔧 Practical Exercises
+
