@@ -1,1 +1,21 @@
 Week 5: Ensemble Methods & Advanced Techniques
+📋 Learning Objectives
+By the end of this week, you will be able to:
+
+✅ Understand ensemble learning principles (bagging, boosting, stacking)
+
+✅ Master XGBoost for high-performance gradient boosting
+
+✅ Implement LightGBM for faster training on large datasets
+
+✅ Use CatBoost for categorical features
+
+✅ Build voting and stacking classifiers
+
+✅ Tune hyperparameters for ensemble models
+
+✅ Handle imbalanced data with ensemble methods
+
+✅ Interpret ensemble model predictions
+
+✅ Deploy ensemble models in production
