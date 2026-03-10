@@ -215,5 +215,297 @@ plt.savefig('ensemble_confusion_matrices.png')
 plt.show()
 print("✅ Confusion matrices saved as 'ensemble_confusion_matrices.png'")
 Exercise 2: XGBoost - Extreme Gradient Boosting
+# xgboost_tutorial.py
+"""
+XGBoost - Extreme Gradient Boosting
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_classification, load_boston
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
+from sklearn.metrics import accuracy_score, mean_squared_error, r2_score
+from sklearn.preprocessing import LabelEncoder
+import warnings
+warnings.filterwarnings('ignore')
+
+# Install xgboost if not already installed
+# pip install xgboost
+
+import xgboost as xgb
+
+print("="*60)
+print("XGBOOST - EXTREME GRADIENT BOOSTING")
+print("="*60)
+
+# 1. XGBoost for Classification
+print("\n1. XGBOOST CLASSIFICATION:")
+
+# Generate dataset
+X, y = make_classification(
+    n_samples=1000, n_features=20, n_informative=15,
+    n_redundant=5, random_state=42
+)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+print(f"Training set: {X_train.shape}")
+print(f"Test set: {X_test.shape}")
+
+# Create DMatrix (optimized data structure for XGBoost)
+dtrain = xgb.DMatrix(X_train, label=y_train)
+dtest = xgb.DMatrix(X_test, label=y_test)
+
+# Set parameters
+params = {
+    'max_depth': 6,
+    'eta': 0.3,
+    'objective': 'binary:logistic',
+    'eval_metric': 'logloss',
+    'seed': 42
+}
+
+# Train model
+print("\nTraining XGBoost model...")
+num_rounds = 100
+model = xgb.train(params, dtrain, num_rounds)
+
+# Predict
+y_pred_prob = model.predict(dtest)
+y_pred = (y_pred_prob > 0.5).astype(int)
+
+accuracy = accuracy_score(y_test, y_pred)
+print(f"Accuracy: {accuracy:.4f}")
+
+# 2. XGBoost with scikit-learn API
+print("\n2. XGBOOST WITH SCIKIT-LEARN API:")
+
+xgb_classifier = xgb.XGBClassifier(
+    n_estimators=100,
+    max_depth=6,
+    learning_rate=0.1,
+    objective='binary:logistic',
+    random_state=42
+)
+
+xgb_classifier.fit(X_train, y_train)
+y_pred_sk = xgb_classifier.predict(X_test)
+accuracy_sk = accuracy_score(y_test, y_pred_sk)
+print(f"scikit-learn API Accuracy: {accuracy_sk:.4f}")
+
+# 3. Feature Importance
+print("\n3. FEATURE IMPORTANCE:")
+
+importance = xgb_classifier.feature_importances_
+indices = np.argsort(importance)[::-1]
+
+plt.figure(figsize=(12, 6))
+plt.barh(range(10), importance[indices[:10]][::-1])
+plt.yticks(range(10), [f'Feature {i}' for i in indices[:10]][::-1])
+plt.xlabel('Importance')
+plt.title('XGBoost Feature Importance (Top 10)')
+plt.grid(True, alpha=0.3, axis='x')
+plt.savefig('xgboost_importance.png')
+plt.show()
+print("✅ Feature importance saved as 'xgboost_importance.png'")
+
+# 4. XGBoost for Regression
+print("\n4. XGBOOST REGRESSION:")
+
+# Load Boston housing dataset
+from sklearn.datasets import fetch_california_housing
+housing = fetch_california_housing()
+X_h, y_h = housing.data, housing.target
+
+X_train_h, X_test_h, y_train_h, y_test_h = train_test_split(
+    X_h, y_h, test_size=0.2, random_state=42
+)
+
+xgb_regressor = xgb.XGBRegressor(
+    n_estimators=100,
+    max_depth=6,
+    learning_rate=0.1,
+    objective='reg:squarederror',
+    random_state=42
+)
+
+xgb_regressor.fit(X_train_h, y_train_h)
+y_pred_h = xgb_regressor.predict(X_test_h)
+
+mse = mean_squared_error(y_test_h, y_pred_h)
+rmse = np.sqrt(mse)
+r2 = r2_score(y_test_h, y_pred_h)
+
+print(f"XGBoost Regression Results:")
+print(f"  MSE: {mse:.4f}")
+print(f"  RMSE: {rmse:.4f}")
+print(f"  R²: {r2:.4f}")
+
+# 5. Early Stopping
+print("\n5. EARLY STOPPING:")
+
+xgb_early = xgb.XGBClassifier(
+    n_estimators=1000,
+    max_depth=6,
+    learning_rate=0.1,
+    early_stopping_rounds=10,
+    eval_metric='logloss',
+    random_state=42
+)
+
+xgb_early.fit(
+    X_train, y_train,
+    eval_set=[(X_test, y_test)],
+    verbose=False
+)
+
+print(f"Best iteration: {xgb_early.best_iteration}")
+print(f"Best score: {xgb_early.best_score:.4f}")
+
+# 6. Hyperparameter Tuning
+print("\n6. HYPERPARAMETER TUNING:")
+
+param_grid = {
+    'max_depth': [3, 6, 9],
+    'learning_rate': [0.01, 0.1, 0.3],
+    'n_estimators': [50, 100, 200],
+    'subsample': [0.8, 1.0],
+    'colsample_bytree': [0.8, 1.0]
+}
+
+# Use a smaller grid for demonstration
+simple_grid = {
+    'max_depth': [3, 6],
+    'learning_rate': [0.1, 0.3],
+    'n_estimators': [50, 100]
+}
+
+print("Performing grid search (this may take a moment)...")
+grid_search = GridSearchCV(
+    xgb.XGBClassifier(random_state=42),
+    simple_grid,
+    cv=3,
+    scoring='accuracy',
+    n_jobs=-1,
+    verbose=1
+)
+grid_search.fit(X_train, y_train)
+
+print(f"\nBest parameters: {grid_search.best_params_}")
+print(f"Best CV score: {grid_search.best_score_:.4f}")
+
+# 7. Learning Curves
+print("\n7. LEARNING CURVES:")
+
+from sklearn.model_selection import learning_curve
+
+train_sizes, train_scores, test_scores = learning_curve(
+    xgb.XGBClassifier(n_estimators=100, max_depth=6, random_state=42),
+    X_train, y_train,
+    cv=5,
+    train_sizes=np.linspace(0.1, 1.0, 10),
+    scoring='accuracy'
+)
+
+train_mean = np.mean(train_scores, axis=1)
+train_std = np.std(train_scores, axis=1)
+test_mean = np.mean(test_scores, axis=1)
+test_std = np.std(test_scores, axis=1)
+
+plt.figure(figsize=(10, 6))
+plt.fill_between(train_sizes, train_mean - train_std, train_mean + train_std, alpha=0.1, color='blue')
+plt.fill_between(train_sizes, test_mean - test_std, test_mean + test_std, alpha=0.1, color='orange')
+plt.plot(train_sizes, train_mean, 'o-', color='blue', label='Training score')
+plt.plot(train_sizes, test_mean, 'o-', color='orange', label='Cross-validation score')
+plt.xlabel('Training Examples')
+plt.ylabel('Accuracy')
+plt.title('XGBoost Learning Curves')
+plt.legend(loc='best')
+plt.grid(True, alpha=0.3)
+plt.savefig('xgboost_learning_curves.png')
+plt.show()
+print("✅ Learning curves saved as 'xgboost_learning_curves.png'")
+
+# 8. Feature Selection with XGBoost
+print("\n8. FEATURE SELECTION WITH XGBOOST:")
+
+# Get feature importances
+importances = xgb_classifier.feature_importances_
+threshold = np.percentile(importances, 50)  # Keep top 50% features
+selected_features = np.where(importances > threshold)[0]
+
+print(f"Original features: {X.shape[1]}")
+print(f"Selected features: {len(selected_features)}")
+
+# Train on selected features
+X_train_sel = X_train[:, selected_features]
+X_test_sel = X_test[:, selected_features]
+
+xgb_sel = xgb.XGBClassifier(n_estimators=100, random_state=42)
+xgb_sel.fit(X_train_sel, y_train)
+y_pred_sel = xgb_sel.predict(X_test_sel)
+accuracy_sel = accuracy_score(y_test, y_pred_sel)
+
+print(f"Accuracy with selected features: {accuracy_sel:.4f}")
+print(f"Original accuracy: {accuracy_sk:.4f}")
+
+# 9. Cross-validation with XGBoost
+print("\n9. CROSS-VALIDATION:")
+
+cv_scores = cross_val_score(
+    xgb.XGBClassifier(n_estimators=100, random_state=42),
+    X_train, y_train, cv=5, scoring='accuracy'
+)
+
+print(f"CV scores: {cv_scores}")
+print(f"Mean CV: {cv_scores.mean():.4f} (+/- {cv_scores.std():.4f})")
+
+# 10. XGBoost with Native API - Advanced Features
+print("\n10. XGBOOST NATIVE API - ADVANCED FEATURES:")
+
+# Create validation set
+dtrain = xgb.DMatrix(X_train, label=y_train)
+dvalid = xgb.DMatrix(X_test, label=y_test)
+
+# Parameters with watchlist
+params = {
+    'max_depth': 6,
+    'eta': 0.1,
+    'objective': 'binary:logistic',
+    'eval_metric': ['logloss', 'error']
+}
+
+watchlist = [(dtrain, 'train'), (dvalid, 'eval')]
+
+# Train with evaluation
+evals_result = {}
+model_advanced = xgb.train(
+    params,
+    dtrain,
+    num_boost_round=100,
+    evals=watchlist,
+    evals_result=evals_result,
+    verbose_eval=False
+)
+
+# Plot training history
+plt.figure(figsize=(10, 6))
+epochs = len(evals_result['train']['logloss'])
+x_axis = range(0, epochs)
+
+plt.plot(x_axis, evals_result['train']['logloss'], label='Train LogLoss')
+plt.plot(x_axis, evals_result['eval']['logloss'], label='Validation LogLoss')
+plt.xlabel('Boosting Rounds')
+plt.ylabel('LogLoss')
+plt.title('XGBoost Training History')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig('xgboost_training_history.png')
+plt.show()
+print("✅ Training history saved as 'xgboost_training_history.png'")
+
 
 
