@@ -1095,5 +1095,241 @@ acc_loaded = accuracy_score(y_test, y_pred_loaded)
 print(f"Loaded model accuracy: {acc_loaded:.4f}")
 
 
+Exercise 5: Stacking Classifiers
+# stacking.py
+"""
+Stacking Classifiers - Meta-learning approach
+"""
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_classification, load_breast_cancer
+from sklearn.model_selection import train_test_split, cross_val_score, StratifiedKFold
+from sklearn.ensemble import StackingClassifier, RandomForestClassifier, GradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("STACKING CLASSIFIERS")
+print("="*60)
+
+# 1. Load dataset
+print("\n1. LOADING DATASET:")
+
+data = load_breast_cancer()
+X, y = data.data, data.target
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+print(f"Training set: {X_train.shape}")
+print(f"Test set: {X_test.shape}")
+
+# 2. Define base learners
+print("\n2. DEFINING BASE LEARNERS:")
+
+base_learners = [
+    ('rf', RandomForestClassifier(n_estimators=100, random_state=42)),
+    ('gb', GradientBoostingClassifier(n_estimators=100, random_state=42)),
+    ('svm', SVC(probability=True, random_state=42)),
+    ('knn', KNeighborsClassifier(n_neighbors=5)),
+    ('dt', DecisionTreeClassifier(max_depth=5, random_state=42))
+]
+
+# Train and evaluate base learners individually
+base_scores = {}
+for name, model in base_learners:
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    base_scores[name] = acc
+    print(f"  {name}: {acc:.4f}")
+
+# 3. Simple Stacking (Logistic Regression as meta-learner)
+print("\n3. SIMPLE STACKING:")
+
+stacking_simple = StackingClassifier(
+    estimators=base_learners,
+    final_estimator=LogisticRegression(max_iter=1000, random_state=42),
+    cv=5
+)
+
+stacking_simple.fit(X_train, y_train)
+y_pred_simple = stacking_simple.predict(X_test)
+acc_simple = accuracy_score(y_test, y_pred_simple)
+print(f"  Simple Stacking Accuracy: {acc_simple:.4f}")
+
+# 4. Stacking with different meta-learners
+print("\n4. STACKING WITH DIFFERENT META-LEARNERS:")
+
+meta_learners = {
+    'Logistic Regression': LogisticRegression(max_iter=1000, random_state=42),
+    'Random Forest': RandomForestClassifier(n_estimators=100, random_state=42),
+    'Gradient Boosting': GradientBoostingClassifier(n_estimators=100, random_state=42),
+    'Decision Tree': DecisionTreeClassifier(max_depth=5, random_state=42)
+}
+
+stacking_results = {}
+for meta_name, meta_model in meta_learners.items():
+    stacking = StackingClassifier(
+        estimators=base_learners,
+        final_estimator=meta_model,
+        cv=5
+    )
+    stacking.fit(X_train, y_train)
+    y_pred = stacking.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    stacking_results[meta_name] = acc
+    print(f"  Meta-learner {meta_name}: {acc:.4f}")
+
+# 5. Compare with best base learner
+print("\n5. PERFORMANCE COMPARISON:")
+
+best_base = max(base_scores, key=base_scores.get)
+best_stacking = max(stacking_results, key=stacking_results.get)
+
+print(f"Best base learner ({best_base}): {base_scores[best_base]:.4f}")
+print(f"Best stacking ({best_stacking}): {stacking_results[best_stacking]:.4f}")
+print(f"Improvement: {stacking_results[best_stacking] - base_scores[best_base]:.4f}")
+
+# 6. Stacking with probability predictions
+print("\n6. STACKING WITH PROBABILITY PREDICTIONS:")
+
+# Use probability predictions as features
+stacking_proba = StackingClassifier(
+    estimators=base_learners,
+    final_estimator=LogisticRegression(max_iter=1000, random_state=42),
+    cv=5,
+    stack_method='predict_proba'
+)
+
+stacking_proba.fit(X_train, y_train)
+y_pred_proba = stacking_proba.predict(X_test)
+acc_proba = accuracy_score(y_test, y_pred_proba)
+print(f"  Stacking with probabilities: {acc_proba:.4f}")
+
+# 7. Visualize results
+print("\n7. VISUALIZING RESULTS:")
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Base learners comparison
+ax1 = axes[0]
+names = list(base_scores.keys())
+scores = list(base_scores.values())
+colors = ['blue'] * len(names)
+colors[names.index(best_base)] = 'green'
+
+bars = ax1.bar(names, scores, color=colors, edgecolor='black')
+ax1.set_ylabel('Accuracy')
+ax1.set_title('Base Learners Performance')
+ax1.set_ylim([0.9, 1.0])
+ax1.grid(True, alpha=0.3, axis='y')
+
+# Add value labels
+for bar, score in zip(bars, scores):
+    ax1.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.002,
+             f'{score:.4f}', ha='center', va='bottom')
+
+# Stacking comparison
+ax2 = axes[1]
+names = list(stacking_results.keys())
+scores = list(stacking_results.values())
+colors = ['orange'] * len(names)
+colors[names.index(best_stacking)] = 'green'
+
+bars = ax2.bar(names, scores, color=colors, edgecolor='black')
+ax2.set_ylabel('Accuracy')
+ax2.set_title('Stacking with Different Meta-learners')
+ax2.set_ylim([0.9, 1.0])
+ax2.grid(True, alpha=0.3, axis='y')
+plt.setp(ax2.get_xticklabels(), rotation=45, ha='right')
+
+# Add value labels
+for bar, score in zip(bars, scores):
+    ax2.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.002,
+             f'{score:.4f}', ha='center', va='bottom')
+
+plt.tight_layout()
+plt.savefig('stacking_comparison.png')
+plt.show()
+print("✅ Stacking comparison saved as 'stacking_comparison.png'")
+
+# 8. Cross-validation comparison
+print("\n8. CROSS-VALIDATION COMPARISON:")
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+# Best base model
+best_base_model = dict(base_learners)[best_base]
+base_cv_scores = cross_val_score(best_base_model, X_train, y_train, cv=cv, scoring='accuracy')
+
+# Best stacking model
+best_stacking_model = StackingClassifier(
+    estimators=base_learners,
+    final_estimator=meta_learners[best_stacking],
+    cv=5
+)
+stacking_cv_scores = cross_val_score(best_stacking_model, X_train, y_train, cv=cv, scoring='accuracy')
+
+print(f"Base model CV: {base_cv_scores.mean():.4f} (+/- {base_cv_scores.std():.4f})")
+print(f"Stacking CV: {stacking_cv_scores.mean():.4f} (+/- {stacking_cv_scores.std():.4f})")
+
+# 9. Confusion Matrices
+print("\n9. CONFUSION MATRICES:")
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+# Best base model
+y_pred_base = best_base_model.predict(X_test)
+cm_base = confusion_matrix(y_test, y_pred_base)
+
+sns.heatmap(cm_base, annot=True, fmt='d', cmap='Blues', ax=axes[0],
+            xticklabels=['Malignant', 'Benign'],
+            yticklabels=['Malignant', 'Benign'])
+axes[0].set_title(f'Best Base Model ({best_base})\nAcc: {base_scores[best_base]:.4f}')
+axes[0].set_xlabel('Predicted')
+axes[0].set_ylabel('Actual')
+
+# Best stacking model
+y_pred_stacking = best_stacking_model.predict(X_test)
+cm_stacking = confusion_matrix(y_test, y_pred_stacking)
+
+sns.heatmap(cm_stacking, annot=True, fmt='d', cmap='Greens', ax=axes[1],
+            xticklabels=['Malignant', 'Benign'],
+            yticklabels=['Malignant', 'Benign'])
+axes[1].set_title(f'Best Stacking ({best_stacking})\nAcc: {stacking_results[best_stacking]:.4f}')
+axes[1].set_xlabel('Predicted')
+axes[1].set_ylabel('Actual')
+
+plt.tight_layout()
+plt.savefig('stacking_confusion_matrices.png')
+plt.show()
+print("✅ Confusion matrices saved as 'stacking_confusion_matrices.png'")
+
+# 10. Feature importance from meta-learner
+print("\n10. FEATURE IMPORTANCE FROM META-LEARNER:")
+
+if hasattr(best_stacking_model.final_estimator_, 'coef_'):
+    # For linear models
+    importance = np.abs(best_stacking_model.final_estimator_.coef_[0])
+    feature_names = [name for name, _ in base_learners]
+    
+    plt.figure(figsize=(10, 6))
+    plt.barh(feature_names, importance, color='orange', edgecolor='black')
+    plt.xlabel('|Coefficient|')
+    plt.title('Meta-learner Feature Importance (Base Model Weights)')
+    plt.grid(True, alpha=0.3, axis='x')
+    plt.savefig('stacking_meta_importance.png')
+    plt.show()
+    print("✅ Meta-learner importance saved as 'stacking_meta_importance.png'")
+
 
 
