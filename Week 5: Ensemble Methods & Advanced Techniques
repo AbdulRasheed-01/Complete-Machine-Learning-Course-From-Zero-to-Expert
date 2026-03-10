@@ -214,5 +214,6 @@ plt.tight_layout()
 plt.savefig('ensemble_confusion_matrices.png')
 plt.show()
 print("✅ Confusion matrices saved as 'ensemble_confusion_matrices.png'")
+Exercise 2: XGBoost - Extreme Gradient Boosting
 
 
