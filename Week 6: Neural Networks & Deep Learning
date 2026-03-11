@@ -635,4 +635,383 @@ loaded_pred = loaded_model.predict(X_test_c_scaled[:5])
 original_pred = clf_model.predict(X_test_c_scaled[:5])
 print(f"Predictions match: {np.allclose(loaded_pred, original_pred)}")
 Exercise 3: Hyperparameter Tuning and Regularization
+# hyperparameter_tuning.py
+"""
+Hyperparameter tuning and regularization techniques
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, regularizers
+from sklearn.datasets import make_moons
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("HYPERPARAMETER TUNING AND REGULARIZATION")
+print("="*60)
+
+# 1. Generate data
+print("\n1. GENERATING DATA:")
+
+X, y = make_moons(n_samples=1000, noise=0.2, random_state=42)
+
+# Convert to one-hot
+y_cat = keras.utils.to_categorical(y, num_classes=2)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y_cat, test_size=0.2, random_state=42
+)
+
+# Scale
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+print(f"Training set size: {X_train_scaled.shape}")
+print(f"Test set size: {X_test_scaled.shape}")
+
+# 2. Overfitting demonstration
+print("\n2. OVERFITTING DEMONSTRATION:")
+
+# Create an overly complex model (prone to overfitting)
+overfit_model = keras.Sequential([
+    layers.Dense(256, activation='relu', input_shape=(2,)),
+    layers.Dense(256, activation='relu'),
+    layers.Dense(256, activation='relu'),
+    layers.Dense(256, activation='relu'),
+    layers.Dense(2, activation='softmax')
+])
+
+overfit_model.compile(
+    optimizer='adam',
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+print("Overfitting model architecture:")
+overfit_model.summary()
+
+# Train without regularization
+history_overfit = overfit_model.fit(
+    X_train_scaled, y_train,
+    validation_data=(X_test_scaled, y_test),
+    epochs=200,
+    batch_size=32,
+    verbose=0
+)
+
+# Plot overfitting
+plt.figure(figsize=(12, 4))
+
+plt.subplot(1, 2, 1)
+plt.plot(history_overfit.history['loss'], label='Training Loss')
+plt.plot(history_overfit.history['val_loss'], label='Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Overfitting - Loss Divergence')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(1, 2, 2)
+plt.plot(history_overfit.history['accuracy'], label='Training Accuracy')
+plt.plot(history_overfit.history['val_accuracy'], label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.title('Overfitting - Accuracy Gap')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('overfitting_demo.png')
+plt.show()
+print("✅ Overfitting demonstration saved as 'overfitting_demo.png'")
+
+# 3. L1 and L2 Regularization
+print("\n3. L1 AND L2 REGULARIZATION:")
+
+def create_regularized_model(l1=0.0, l2=0.0, dropout=0.0):
+    """Create model with regularization"""
+    model = keras.Sequential([
+        layers.Dense(128, activation='relu', input_shape=(2,),
+                    kernel_regularizer=regularizers.l1_l2(l1=l1, l2=l2)),
+        layers.Dropout(dropout),
+        layers.Dense(128, activation='relu',
+                    kernel_regularizer=regularizers.l1_l2(l1=l1, l2=l2)),
+        layers.Dropout(dropout),
+        layers.Dense(2, activation='softmax')
+    ])
+    
+    model.compile(
+        optimizer='adam',
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+    return model
+
+# Test different regularization strengths
+regularization_configs = [
+    ('No Regularization', create_regularized_model(l1=0, l2=0, dropout=0)),
+    ('L2 (0.001)', create_regularized_model(l1=0, l2=0.001, dropout=0)),
+    ('L2 (0.01)', create_regularized_model(l1=0, l2=0.01, dropout=0)),
+    ('Dropout (0.3)', create_regularized_model(l1=0, l2=0, dropout=0.3)),
+    ('Dropout (0.5)', create_regularized_model(l1=0, l2=0, dropout=0.5)),
+    ('L1+L2+Dropout', create_regularized_model(l1=0.001, l2=0.001, dropout=0.3))
+]
+
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+axes = axes.flatten()
+
+for ax, (name, model) in zip(axes, regularization_configs):
+    history = model.fit(
+        X_train_scaled, y_train,
+        validation_data=(X_test_scaled, y_test),
+        epochs=100,
+        batch_size=32,
+        verbose=0
+    )
+    
+    ax.plot(history.history['loss'], label='Train Loss')
+    ax.plot(history.history['val_loss'], label='Val Loss')
+    ax.set_title(name)
+    ax.set_xlabel('Epoch')
+    ax.set_ylabel('Loss')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('regularization_comparison.png')
+plt.show()
+print("✅ Regularization comparison saved as 'regularization_comparison.png'")
+
+# 4. Early Stopping
+print("\n4. EARLY STOPPING:")
+
+from tensorflow.keras.callbacks import EarlyStopping
+
+# Create model
+early_stop_model = create_regularized_model(l2=0.001, dropout=0.3)
+
+# Define early stopping callback
+early_stopping = EarlyStopping(
+    monitor='val_loss',
+    patience=10,
+    restore_best_weights=True,
+    verbose=1
+)
+
+# Train with early stopping
+history_early = early_stop_model.fit(
+    X_train_scaled, y_train,
+    validation_data=(X_test_scaled, y_test),
+    epochs=200,
+    batch_size=32,
+    callbacks=[early_stopping],
+    verbose=0
+)
+
+print(f"Training stopped after {len(history_early.history['loss'])} epochs")
+
+plt.figure(figsize=(10, 6))
+plt.plot(history_early.history['loss'], label='Training Loss')
+plt.plot(history_early.history['val_loss'], label='Validation Loss')
+plt.axvline(x=early_stopping.stopped_epoch - early_stopping.patience, 
+            color='r', linestyle='--', label='Best Model')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Early Stopping')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig('early_stopping.png')
+plt.show()
+print("✅ Early stopping plot saved as 'early_stopping.png'")
+
+# 5. Learning Rate Scheduling
+print("\n5. LEARNING RATE SCHEDULING:")
+
+from tensorflow.keras.optimizers.schedules import ExponentialDecay
+from tensorflow.keras.callbacks import LearningRateScheduler
+
+# Fixed learning rate
+fixed_lr_model = create_regularized_model(l2=0.001, dropout=0.3)
+fixed_lr_model.compile(
+    optimizer=keras.optimizers.Adam(learning_rate=0.01),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+history_fixed = fixed_lr_model.fit(
+    X_train_scaled, y_train,
+    validation_data=(X_test_scaled, y_test),
+    epochs=100,
+    batch_size=32,
+    verbose=0
+)
+
+# Exponential decay
+lr_schedule = ExponentialDecay(
+    initial_learning_rate=0.01,
+    decay_steps=1000,
+    decay_rate=0.9
+)
+
+exp_decay_model = create_regularized_model(l2=0.001, dropout=0.3)
+exp_decay_model.compile(
+    optimizer=keras.optimizers.Adam(learning_rate=lr_schedule),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+history_exp = exp_decay_model.fit(
+    X_train_scaled, y_train,
+    validation_data=(X_test_scaled, y_test),
+    epochs=100,
+    batch_size=32,
+    verbose=0
+)
+
+# Step decay function
+def step_decay(epoch):
+    initial_lr = 0.01
+    drop = 0.5
+    epochs_drop = 20
+    lr = initial_lr * (drop ** np.floor((1 + epoch) / epochs_drop))
+    return lr
+
+step_decay_model = create_regularized_model(l2=0.001, dropout=0.3)
+step_decay_model.compile(
+    optimizer=keras.optimizers.Adam(learning_rate=0.01),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+lr_scheduler = LearningRateScheduler(step_decay)
+
+history_step = step_decay_model.fit(
+    X_train_scaled, y_train,
+    validation_data=(X_test_scaled, y_test),
+    epochs=100,
+    batch_size=32,
+    callbacks=[lr_scheduler],
+    verbose=0
+)
+
+# Compare learning rate schedules
+plt.figure(figsize=(15, 5))
+
+plt.subplot(1, 3, 1)
+plt.plot(history_fixed.history['loss'], label='Train')
+plt.plot(history_fixed.history['val_loss'], label='Validation')
+plt.title('Fixed LR (0.01)')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(1, 3, 2)
+plt.plot(history_exp.history['loss'], label='Train')
+plt.plot(history_exp.history['val_loss'], label='Validation')
+plt.title('Exponential Decay')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(1, 3, 3)
+plt.plot(history_step.history['loss'], label='Train')
+plt.plot(history_step.history['val_loss'], label='Validation')
+plt.title('Step Decay')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('learning_rate_schedules.png')
+plt.show()
+print("✅ Learning rate schedules saved as 'learning_rate_schedules.png'")
+
+# 6. Grid Search for Hyperparameters
+print("\n6. SIMPLE GRID SEARCH:")
+
+# Define hyperparameter combinations to try
+param_grid = {
+    'units': [32, 64, 128],
+    'layers': [1, 2, 3],
+    'learning_rate': [0.001, 0.01],
+    'batch_size': [32, 64]
+}
+
+results = []
+
+for units in param_grid['units']:
+    for n_layers in param_grid['layers']:
+        for lr in param_grid['learning_rate']:
+            for batch_size in param_grid['batch_size']:
+                print(f"Testing: units={units}, layers={n_layers}, lr={lr}, batch_size={batch_size}")
+                
+                # Build model
+                model = keras.Sequential()
+                model.add(layers.Dense(units, activation='relu', input_shape=(2,)))
+                
+                for _ in range(n_layers - 1):
+                    model.add(layers.Dense(units, activation='relu'))
+                    model.add(layers.Dropout(0.3))
+                
+                model.add(layers.Dense(2, activation='softmax'))
+                
+                model.compile(
+                    optimizer=keras.optimizers.Adam(learning_rate=lr),
+                    loss='categorical_crossentropy',
+                    metrics=['accuracy']
+                )
+                
+                # Train with early stopping
+                early_stop = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
+                
+                history = model.fit(
+                    X_train_scaled, y_train,
+                    validation_data=(X_test_scaled, y_test),
+                    epochs=100,
+                    batch_size=batch_size,
+                    callbacks=[early_stop],
+                    verbose=0
+                )
+                
+                # Get best validation accuracy
+                val_acc = max(history.history['val_accuracy'])
+                
+                results.append({
+                    'units': units,
+                    'layers': n_layers,
+                    'learning_rate': lr,
+                    'batch_size': batch_size,
+                    'val_accuracy': val_acc
+                })
+
+# Find best configuration
+best_result = max(results, key=lambda x: x['val_accuracy'])
+print(f"\nBest configuration: {best_result}")
+
+# Plot results
+import pandas as pd
+results_df = pd.DataFrame(results)
+
+plt.figure(figsize=(12, 6))
+for lr in param_grid['learning_rate']:
+    subset = results_df[results_df['learning_rate'] == lr]
+    plt.scatter(subset.index, subset['val_accuracy'], label=f'LR={lr}', s=100)
+
+plt.xlabel('Configuration Index')
+plt.ylabel('Validation Accuracy')
+plt.title('Grid Search Results')
+plt.legend()
+plt.grid(True, alpha=0.3)
+plt.savefig('grid_search_results.png')
+plt.show()
+print("✅ Grid search results saved as 'grid_search_results.png'")
 
