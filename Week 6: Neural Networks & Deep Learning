@@ -380,3 +380,258 @@ print("✅ Decision boundary saved as 'nn_decision_boundary.png'")
 
 Exercise 2: TensorFlow and Keras Basics
 
+# tensorflow_basics.py
+"""
+Introduction to TensorFlow and Keras
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, models, optimizers, losses, metrics
+from sklearn.datasets import make_regression, make_classification
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("TENSORFLOW AND KERAS BASICS")
+print("="*60)
+
+print(f"TensorFlow version: {tf.__version__}")
+print(f"Keras version: {keras.__version__}")
+
+# Check for GPU
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    print(f"GPU available: {gpus}")
+else:
+    print("GPU not available, using CPU")
+
+# 1. Creating Tensors
+print("\n1. CREATING TENSORS:")
+
+# From NumPy
+np_array = np.array([[1, 2, 3], [4, 5, 6]])
+tensor = tf.constant(np_array)
+print(f"Tensor from NumPy:\n{tensor}")
+
+# Constant tensor
+const_tensor = tf.constant([[1, 2], [3, 4]], dtype=tf.float32)
+print(f"\nConstant tensor:\n{const_tensor}")
+
+# Random tensor
+random_tensor = tf.random.normal([3, 4], mean=0, stddev=1)
+print(f"\nRandom normal tensor:\n{random_tensor}")
+
+# Variable tensor (trainable)
+var_tensor = tf.Variable([[1.0, 2.0], [3.0, 4.0]])
+print(f"\nVariable tensor (trainable):\n{var_tensor}")
+
+# Tensor operations
+a = tf.constant([[1, 2], [3, 4]])
+b = tf.constant([[5, 6], [7, 8]])
+
+print(f"\nTensor operations:")
+print(f"a + b = \n{a + b}")
+print(f"a * b = \n{a * b}")
+print(f"tf.matmul(a, b) = \n{tf.matmul(a, b)}")
+
+# 2. Building a Sequential Model
+print("\n2. BUILDING A SEQUENTIAL MODEL:")
+
+model = keras.Sequential([
+    layers.Dense(64, activation='relu', input_shape=(10,)),
+    layers.Dense(64, activation='relu'),
+    layers.Dense(1, activation='sigmoid')
+])
+
+print("Model architecture:")
+model.summary()
+
+# 3. Functional API Model
+print("\n3. FUNCTIONAL API MODEL:")
+
+inputs = keras.Input(shape=(10,))
+x = layers.Dense(64, activation='relu')(inputs)
+x = layers.Dense(64, activation='relu')(x)
+outputs = layers.Dense(1, activation='sigmoid')(x)
+
+functional_model = keras.Model(inputs=inputs, outputs=outputs)
+print("Functional API model:")
+functional_model.summary()
+
+# 4. Regression Example
+print("\n4. REGRESSION EXAMPLE:")
+
+# Generate synthetic regression data
+X_reg, y_reg = make_regression(n_samples=1000, n_features=5, noise=10, random_state=42)
+
+X_train_r, X_test_r, y_train_r, y_test_r = train_test_split(
+    X_reg, y_reg, test_size=0.2, random_state=42
+)
+
+# Scale features
+scaler_r = StandardScaler()
+X_train_r_scaled = scaler_r.fit_transform(X_train_r)
+X_test_r_scaled = scaler_r.transform(X_test_r)
+
+print(f"Training set shape: {X_train_r_scaled.shape}")
+print(f"Test set shape: {X_test_r_scaled.shape}")
+
+# Build regression model
+reg_model = keras.Sequential([
+    layers.Dense(64, activation='relu', input_shape=(5,)),
+    layers.Dense(32, activation='relu'),
+    layers.Dense(1)  # Linear activation for regression
+])
+
+reg_model.compile(
+    optimizer='adam',
+    loss='mse',
+    metrics=['mae']
+)
+
+print("\nRegression model:")
+reg_model.summary()
+
+# Train
+history_reg = reg_model.fit(
+    X_train_r_scaled, y_train_r,
+    validation_split=0.2,
+    epochs=50,
+    batch_size=32,
+    verbose=0
+)
+
+# Evaluate
+test_loss, test_mae = reg_model.evaluate(X_test_r_scaled, y_test_r, verbose=0)
+print(f"\nTest MSE: {test_loss:.4f}")
+print(f"Test MAE: {test_mae:.4f}")
+
+# Plot training history
+plt.figure(figsize=(12, 4))
+
+plt.subplot(1, 2, 1)
+plt.plot(history_reg.history['loss'], label='Training Loss')
+plt.plot(history_reg.history['val_loss'], label='Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('MSE Loss')
+plt.title('Regression - Training History')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(1, 2, 2)
+plt.plot(history_reg.history['mae'], label='Training MAE')
+plt.plot(history_reg.history['val_mae'], label='Validation MAE')
+plt.xlabel('Epoch')
+plt.ylabel('MAE')
+plt.title('Regression - MAE')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('keras_regression_history.png')
+plt.show()
+print("✅ Regression training history saved as 'keras_regression_history.png'")
+
+# 5. Classification Example
+print("\n5. CLASSIFICATION EXAMPLE:")
+
+# Generate synthetic classification data
+X_clf, y_clf = make_classification(
+    n_samples=1000, n_features=10, n_classes=3, n_informative=8,
+    random_state=42
+)
+
+# Convert to one-hot encoding
+y_clf_cat = keras.utils.to_categorical(y_clf, num_classes=3)
+
+X_train_c, X_test_c, y_train_c, y_test_c = train_test_split(
+    X_clf, y_clf_cat, test_size=0.2, random_state=42
+)
+
+# Scale features
+scaler_c = StandardScaler()
+X_train_c_scaled = scaler_c.fit_transform(X_train_c)
+X_test_c_scaled = scaler_c.transform(X_test_c)
+
+print(f"Training set shape: {X_train_c_scaled.shape}")
+print(f"Test set shape: {X_test_c_scaled.shape}")
+
+# Build classification model
+clf_model = keras.Sequential([
+    layers.Dense(128, activation='relu', input_shape=(10,)),
+    layers.Dropout(0.3),
+    layers.Dense(64, activation='relu'),
+    layers.Dropout(0.3),
+    layers.Dense(3, activation='softmax')
+])
+
+clf_model.compile(
+    optimizer='adam',
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+print("\nClassification model:")
+clf_model.summary()
+
+# Train
+history_clf = clf_model.fit(
+    X_train_c_scaled, y_train_c,
+    validation_split=0.2,
+    epochs=50,
+    batch_size=32,
+    verbose=0
+)
+
+# Evaluate
+test_loss, test_acc = clf_model.evaluate(X_test_c_scaled, y_test_c, verbose=0)
+print(f"\nTest loss: {test_loss:.4f}")
+print(f"Test accuracy: {test_acc:.4f}")
+
+# Plot training history
+plt.figure(figsize=(12, 4))
+
+plt.subplot(1, 2, 1)
+plt.plot(history_clf.history['loss'], label='Training Loss')
+plt.plot(history_clf.history['val_loss'], label='Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Classification - Training History')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(1, 2, 2)
+plt.plot(history_clf.history['accuracy'], label='Training Accuracy')
+plt.plot(history_clf.history['val_accuracy'], label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.title('Classification - Accuracy')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('keras_classification_history.png')
+plt.show()
+print("✅ Classification training history saved as 'keras_classification_history.png'")
+
+# 6. Saving and Loading Models
+print("\n6. SAVING AND LOADING MODELS:")
+
+# Save model
+clf_model.save('classification_model.h5')
+print("✅ Model saved as 'classification_model.h5'")
+
+# Load model
+loaded_model = keras.models.load_model('classification_model.h5')
+print("✅ Model loaded successfully")
+
+# Verify loaded model
+loaded_pred = loaded_model.predict(X_test_c_scaled[:5])
+original_pred = clf_model.predict(X_test_c_scaled[:5])
+print(f"Predictions match: {np.allclose(loaded_pred, original_pred)}")
+
