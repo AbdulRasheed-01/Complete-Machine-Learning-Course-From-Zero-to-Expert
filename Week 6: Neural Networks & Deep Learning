@@ -634,4 +634,5 @@ print("✅ Model loaded successfully")
 loaded_pred = loaded_model.predict(X_test_c_scaled[:5])
 original_pred = clf_model.predict(X_test_c_scaled[:5])
 print(f"Predictions match: {np.allclose(loaded_pred, original_pred)}")
+Exercise 3: Hyperparameter Tuning and Regularization
 
