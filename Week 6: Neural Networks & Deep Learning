@@ -1,5 +1,7 @@
 Week 6: Neural Networks & Deep Learning
+
 📋 Learning Objectives
+
 By the end of this week, you will be able to:
 
 ✅ Understand the architecture of neural networks
@@ -2184,5 +2186,6 @@ Key Takeaways:
 ✅ Deep networks can learn complex patterns
 
 ✅ The Fashion MNIST project demonstrates end-to-end deep learning
+
 Next Week: Week 7 - Computer Vision with Convolutional Neural Networks (CNNs)
 
