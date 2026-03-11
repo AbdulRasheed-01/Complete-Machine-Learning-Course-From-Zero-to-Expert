@@ -1983,3 +1983,164 @@ print("✅ Training history saved as 'training_history.csv'")
 print("\n" + "="*70)
 print("✅ PROJECT COMPLETED SUCCESSFULLY!")
 print("="*70)
+📊 Week 6 Quiz
+
+# week6_quiz.py
+"""
+Week 6 Quiz - Test your knowledge of Neural Networks
+"""
+
+def quiz():
+    score = 0
+    total = 10
+    
+    print("\n" + "="*50)
+    print("WEEK 6 QUIZ - Neural Networks & Deep Learning")
+    print("="*50)
+    
+    # Question 1
+    print("\n1. What is the purpose of an activation function in a neural network?")
+    print("   a) To normalize the input data")
+    print("   b) To introduce non-linearity into the network")
+    print("   c) To reduce the number of parameters")
+    print("   d) To initialize weights")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Activation functions add non-linearity")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Activation functions allow networks to learn complex patterns")
+    
+    # Question 2
+    print("\n2. Which activation function is most commonly used in hidden layers?")
+    print("   a) Sigmoid")
+    print("   b) Tanh")
+    print("   c) ReLU")
+    print("   d) Softmax")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "c":
+        print("   ✅ Correct! ReLU is the default choice for hidden layers")
+        score += 1
+    else:
+        print("   ❌ Incorrect. ReLU is popular due to its simplicity and effectiveness")
+    
+    # Question 3
+    print("\n3. What problem does the vanishing gradient cause?")
+    print("   a) Weights become too large")
+    print("   b) Gradients become very small, preventing learning in early layers")
+    print("   c) Training becomes too fast")
+    print("   d) The model overfits")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Vanishing gradients make early layers learn slowly")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Vanishing gradients occur when gradients approach zero")
+    
+    # Question 4
+    print("\n4. What is the purpose of dropout?")
+    print("   a) To speed up training")
+    print("   b) To reduce overfitting by randomly dropping neurons")
+    print("   c) To increase model capacity")
+    print("   d) To normalize inputs")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Dropout prevents co-adaptation of neurons")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Dropout is a regularization technique")
+    
+    # Question 5
+    print("\n5. What does the softmax activation function do?")
+    print("   a) Outputs values between -1 and 1")
+    print("   b) Outputs a probability distribution over multiple classes")
+    print("   c) Outputs binary values (0 or 1)")
+    print("   d) Outputs unbounded values")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Softmax produces probabilities that sum to 1")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Softmax is used for multi-class classification")
+    
+    # Question 6
+    print("\n6. What is the difference between batch gradient descent and stochastic gradient descent?")
+    print("   a) Batch uses all data, SGD uses one sample at a time")
+    print("   b) There is no difference")
+    print("   c) Batch is faster")
+    print("   d) SGD uses all data")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "a":
+        print("   ✅ Correct! Batch uses all data, SGD uses one sample")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Mini-batch is a compromise between the two")
+    
+    # Question 7
+    print("\n7. What does the term 'epoch' mean in neural network training?")
+    print("   a) One forward pass through the network")
+    print("   b) One complete pass through the entire training dataset")
+    print("   c) The learning rate schedule")
+    print("   d) The number of layers in the network")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! One epoch is one full pass through the training data")
+        score += 1
+    else:
+        print("   ❌ Incorrect. An epoch processes all training samples once")
+    
+    # Question 8
+    print("\n8. What is the purpose of batch normalization?")
+    print("   a) To increase batch size")
+    print("   b) To normalize activations and stabilize training")
+    print("   c) To reduce the number of parameters")
+    print("   d) To combine multiple batches")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Batch normalization stabilizes and accelerates training")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Batch norm normalizes layer inputs")
+    
+    # Question 9
+    print("\n9. Which loss function is appropriate for binary classification?")
+    print("   a) Mean Squared Error")
+    print("   b) Categorical Crossentropy")
+    print("   c) Binary Crossentropy")
+    print("   d) Huber Loss")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "c":
+        print("   ✅ Correct! Binary crossentropy is for binary classification")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Use binary crossentropy for two-class problems")
+    
+    # Question 10
+    print("\n10. What is the 'dying ReLU' problem?")
+    print("    a) ReLU units become stuck at 0 and never activate")
+    print("    b) ReLU units become too large")
+    print("    c) ReLU causes vanishing gradients")
+    print("    d) ReLU is too slow to compute")
+    answer = input("    Your answer (a/b/c/d): ").lower()
+    if answer == "a":
+        print("    ✅ Correct! Dead ReLU units always output 0")
+        score += 1
+    else:
+        print("    ❌ Incorrect. Leaky ReLU helps solve this problem")
+    
+    # Final score
+    print("\n" + "="*50)
+    print(f"QUIZ COMPLETE! Your score: {score}/{total}")
+    print("="*50)
+    
+    if score == total:
+        print("🏆 Perfect! You're mastering neural networks!")
+    elif score >= 8:
+        print("🌟 Great job! You have a solid understanding!")
+    elif score >= 6:
+        print("📚 Good effort! Review the topics you missed.")
+    else:
+        print("💪 Keep practicing! Neural networks are complex but rewarding.")
+
+if __name__ == "__main__":
+    quiz()
