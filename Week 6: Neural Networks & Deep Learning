@@ -378,4 +378,5 @@ plt.savefig('nn_decision_boundary.png')
 plt.show()
 print("✅ Decision boundary saved as 'nn_decision_boundary.png'")
 
+Exercise 2: TensorFlow and Keras Basics
 
