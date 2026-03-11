@@ -22,3 +22,16 @@ By the end of this week, you will be able to:
 ✅ Build an image classifier with convolutional layers
 📚 Theory Content
 Activation Functions Comparison
+
+Function	    |         Formula	                                   | Range	        |       Pros	                        |    Cons
+
+Sigmoid	      |         $f(x) = \frac{1}{1+e^{-x}}$	               | (0, 1)	        |       Smooth, probabilistic output	|    Vanishing gradient
+
+Tanh	        |         $f(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}$ | (-1, 1)        |       Zero-centered	                |    Vanishing gradient
+
+ReLU	        |         $f(x) = \max(0, x)$	                       | [0, ∞)	        |       No vanishing gradient	        |    Dying ReLU
+
+Leaky ReLU	  |         $f(x) = \max(0.01x, x)$	                   | (-∞, ∞)	      |       Fixes dying ReLU	            |    Not always better
+
+Softmax	      |         $f(x_i) = \frac{e^{x_i}}{\sum_j e^{x_j}}$	 | (0, 1)	        |       Probability distribution	    |    For multi-class only
+  
