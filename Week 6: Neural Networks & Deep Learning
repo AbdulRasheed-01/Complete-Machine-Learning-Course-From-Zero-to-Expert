@@ -21,7 +21,7 @@ By the end of this week, you will be able to:
 ✅ Save and load trained models
 ✅ Build an image classifier with convolutional layers
 📚 Theory Content
-Activation Functions Comparison
+6.1 Activation Functions Comparison
 
 Function	    |         Formula	                                   | Range	        |       Pros	                        |    Cons
 
@@ -35,6 +35,7 @@ Leaky ReLU	  |         $f(x) = \max(0.01x, x)$	                   | (-∞, ∞)	
 
 Softmax	      |         $f(x_i) = \frac{e^{x_i}}{\sum_j e^{x_j}}$	 | (0, 1)	        |       Probability distribution	    |    For multi-class only
 
+🔧 Practical Exercises
+Exercise 1: Neural Network from Scratch
 
-6.4 Loss Functions
 
