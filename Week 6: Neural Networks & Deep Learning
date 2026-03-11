@@ -1,1 +1,21 @@
 Week 6: Neural Networks & Deep Learning
+📋 Learning Objectives
+By the end of this week, you will be able to:
+
+✅ Understand the architecture of neural networks
+
+✅ Implement forward and backward propagation from scratch
+
+✅ Build and train neural networks with TensorFlow/Keras
+
+✅ Understand activation functions and their use cases
+
+✅ Implement regularization techniques to prevent overfitting
+
+✅ Tune hyperparameters for optimal performance
+
+✅ Build deep neural networks for complex problems
+
+✅ Use callbacks for efficient training
+
+✅ Save and load trained models
