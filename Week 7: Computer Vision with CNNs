@@ -1,1 +1,20 @@
 Week 7: Computer Vision with CNNs
+📋 Learning Objectives
+By the end of this week, you will be able to:
+
+✅ Understand convolutional neural network architecture
+
+✅ Implement CNNs from scratch and with Keras
+
+✅ Master transfer learning with pre-trained models
+
+✅ Build image classification systems
+
+✅ Implement object detection with YOLO and SSD
+
+✅ Perform image segmentation with U-Net
+
+✅ Use data augmentation to improve performance
+
+✅ Deploy computer vision models to production
+
