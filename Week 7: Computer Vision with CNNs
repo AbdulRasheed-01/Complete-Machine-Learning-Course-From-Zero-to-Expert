@@ -36,3 +36,7 @@ Inception-v3	    |          2015	     |     Inception modules	                  
 DenseNet	        |          2017	     |     Dense connections	                    |    8M	                    |       3.5%
 
 EfficientNet	    |          2019	     |     Neural architecture search	          |    5.3M	                     |    2.9%
+
+🔧 Practical Exercises
+Exercise 1: CNN from Scratch
+
