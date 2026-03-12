@@ -1031,3 +1031,227 @@ final_with_aug = history_with_aug.history['val_accuracy'][-1]
 print(f"\nFinal validation accuracy without augmentation: {final_no_aug:.4f}")
 print(f"Final validation accuracy with augmentation: {final_with_aug:.4f}")
 print(f"Improvement: {(final_with_aug - final_no_aug) * 100:.2f}%")
+
+Exercise 5: Object Detection with YOLO
+# object_detection.py
+"""
+Object detection using YOLO (You Only Look Once)
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import cv2
+import tensorflow as tf
+from tensorflow.keras import layers, models
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("OBJECT DETECTION WITH YOLO")
+print("="*60)
+
+# 1. Introduction to YOLO
+print("\n1. YOLO CONCEPT:")
+print("""
+YOLO (You Only Look Once) divides the image into a grid.
+Each grid cell predicts:
+- Bounding boxes (x, y, w, h)
+- Confidence scores
+- Class probabilities
+
+Key advantages:
+- Single forward pass
+- Real-time detection
+- Global context understanding
+""")
+
+# 2. Create a simple synthetic dataset for demonstration
+print("\n2. CREATING SYNTHETIC OBJECT DETECTION DATA:")
+
+def create_synthetic_image(size=416):
+    """Create a synthetic image with random shapes"""
+    img = np.ones((size, size, 3), dtype=np.uint8) * 255
+    
+    # Random circles (as objects)
+    objects = []
+    for _ in range(np.random.randint(1, 5)):
+        center = (np.random.randint(50, size-50), np.random.randint(50, size-50))
+        radius = np.random.randint(20, 50)
+        color = tuple(np.random.randint(0, 255, 3).tolist())
+        cv2.circle(img, center, radius, color, -1)
+        
+        # Store bounding box
+        x1 = center[0] - radius
+        y1 = center[1] - radius
+        x2 = center[0] + radius
+        y2 = center[1] + radius
+        objects.append({
+            'bbox': [x1, y1, x2, y2],
+            'class': 0  # Assuming all are class 0 for simplicity
+        })
+    
+    return img, objects
+
+# Generate and display sample images
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+for ax in axes.flat:
+    img, objects = create_synthetic_image(300)
+    ax.imshow(img)
+    
+    # Draw bounding boxes
+    for obj in objects:
+        x1, y1, x2, y2 = obj['bbox']
+        rect = plt.Rectangle((x1, y1), x2-x1, y2-y1, 
+                            fill=False, edgecolor='red', linewidth=2)
+        ax.add_patch(rect)
+    
+    ax.set_title(f'Objects: {len(objects)}')
+    ax.axis('off')
+
+plt.suptitle('Synthetic Object Detection Data')
+plt.tight_layout()
+plt.savefig('synthetic_detection.png')
+plt.show()
+print("✅ Synthetic detection data saved as 'synthetic_detection.png'")
+
+# 3. Simple YOLO-like model architecture
+print("\n3. BUILDING A SIMPLE YOLO-LIKE MODEL:")
+
+def create_simple_yolo(input_shape=(416, 416, 3), num_classes=1, grid_size=13):
+    """Create a simplified YOLO-like model"""
+    
+    # Number of bounding boxes per cell
+    num_boxes = 3
+    
+    # Output size: grid_size x grid_size x (num_boxes * (4 + 1) + num_classes)
+    # 4: bbox coordinates, 1: confidence, num_classes: class probabilities
+    
+    model = models.Sequential([
+        # Backbone (simplified)
+        layers.Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=input_shape),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(256, (3, 3), activation='relu', padding='same'),
+        layers.MaxPooling2D((2, 2)),
+        
+        # Detection layers
+        layers.Conv2D(512, (3, 3), activation='relu', padding='same'),
+        layers.Conv2D(1024, (3, 3), activation='relu', padding='same'),
+        layers.Conv2D(num_boxes * (5 + num_classes), (1, 1), activation='linear')
+    ])
+    
+    return model
+
+yolo_model = create_simple_yolo()
+print("YOLO-like model summary:")
+yolo_model.summary()
+
+# 4. Load pre-trained model (using TensorFlow Hub)
+print("\n4. LOADING PRE-TRAINED YOLO MODEL:")
+
+try:
+    # Attempt to load a pre-trained model (may require internet)
+    import tensorflow_hub as hub
+    
+    # Load a lightweight model
+    detector = hub.load("https://tfhub.dev/tensorflow/ssd_mobilenet_v2/2")
+    print("Pre-trained detector loaded successfully")
+    
+except Exception as e:
+    print(f"Could not load pre-trained model: {e}")
+    print("Continuing with demonstration...")
+
+# 5. Object detection on sample image
+print("\n5. OBJECT DETECTION DEMONSTRATION:")
+
+# Load a sample image (using OpenCV)
+try:
+    # Try to load an image
+    img = cv2.imread('sample_image.jpg')
+    if img is None:
+        # Create a synthetic image
+        img = np.zeros((300, 300, 3), dtype=np.uint8)
+        cv2.rectangle(img, (50, 50), (150, 150), (0, 0, 255), -1)
+        cv2.rectangle(img, (180, 180), (280, 280), (0, 255, 0), -1)
+        cv2.putText(img, 'Demo Image', (50, 250), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    
+    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    
+    plt.figure(figsize=(10, 8))
+    plt.imshow(img_rgb)
+    plt.title('Sample Image for Object Detection')
+    plt.axis('off')
+    plt.savefig('detection_sample.png')
+    plt.show()
+    print("✅ Sample image saved as 'detection_sample.png'")
+    
+except Exception as e:
+    print(f"Error loading image: {e}")
+
+# 6. Visualization of detection results
+print("\n6. VISUALIZING DETECTION RESULTS:")
+
+def draw_detection_results(img, boxes, scores, classes, class_names, threshold=0.5):
+    """Draw detection results on image"""
+    img_copy = img.copy()
+    height, width, _ = img.shape
+    
+    for box, score, cls in zip(boxes, scores, classes):
+        if score > threshold:
+            # Convert normalized coordinates to pixel coordinates
+            y1, x1, y2, x2 = box
+            x1 = int(x1 * width)
+            y1 = int(y1 * height)
+            x2 = int(x2 * width)
+            y2 = int(y2 * height)
+            
+            # Draw box
+            cv2.rectangle(img_copy, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            
+            # Draw label
+            label = f"{class_names[cls]}: {score:.2f}"
+            cv2.putText(img_copy, label, (x1, y1-10), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    
+    return img_copy
+
+# Create a synthetic detection example
+demo_img = np.zeros((300, 300, 3), dtype=np.uint8)
+# Add some shapes
+cv2.rectangle(demo_img, (50, 50), (120, 120), (255, 0, 0), -1)  # Blue square
+cv2.circle(demo_img, (200, 200), 40, (0, 255, 0), -1)  # Green circle
+cv2.rectangle(demo_img, (150, 50), (250, 120), (0, 0, 255), -1)  # Red rectangle
+
+# Simulated detection results
+boxes = [
+    [0.15, 0.15, 0.4, 0.4],    # Blue square
+    [0.5, 0.5, 0.8, 0.8],      # Green circle
+    [0.5, 0.15, 0.85, 0.4]     # Red rectangle
+]
+scores = [0.95, 0.87, 0.92]
+classes = [0, 1, 0]
+class_names = ['object', 'thing']
+
+result_img = draw_detection_results(demo_img, boxes, scores, classes, class_names)
+
+plt.figure(figsize=(12, 5))
+
+plt.subplot(1, 2, 1)
+plt.imshow(demo_img)
+plt.title('Original Image')
+plt.axis('off')
+
+plt.subplot(1, 2, 2)
+plt.imshow(result_img)
+plt.title('Detection Results')
+plt.axis('off')
+
+plt.tight_layout()
+plt.savefig('detection_demo.png')
+plt.show()
+print("✅ Detection demo saved as 'detection_demo.png'")
+
