@@ -266,3 +266,290 @@ plt.tight_layout()
 plt.savefig('feature_maps.png')
 plt.show()
 print("✅ Feature maps visualization saved as 'feature_maps.png'")
+
+Exercise 2: CNNs with Keras
+# cnn_keras.py
+"""
+Building CNNs with Keras for image classification
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, models, datasets
+from sklearn.metrics import confusion_matrix, classification_report
+import seaborn as sns
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("CNNS WITH KERAS")
+print("="*60)
+
+# 1. Load and prepare CIFAR-10 dataset
+print("\n1. LOADING CIFAR-10 DATASET:")
+
+(X_train, y_train), (X_test, y_test) = datasets.cifar10.load_data()
+
+# Class names
+class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer',
+               'dog', 'frog', 'horse', 'ship', 'truck']
+
+print(f"Training images: {X_train.shape}")
+print(f"Training labels: {y_train.shape}")
+print(f"Test images: {X_test.shape}")
+print(f"Test labels: {y_test.shape}")
+print(f"Image shape: {X_train[0].shape}")
+print(f"Pixel range: {X_train.min()} - {X_train.max()}")
+
+# Normalize
+X_train = X_train.astype('float32') / 255.0
+X_test = X_test.astype('float32') / 255.0
+
+# One-hot encode labels
+y_train_cat = keras.utils.to_categorical(y_train, 10)
+y_test_cat = keras.utils.to_categorical(y_test, 10)
+
+# Visualize samples
+fig, axes = plt.subplots(2, 5, figsize=(15, 6))
+for i, ax in enumerate(axes.flat):
+    ax.imshow(X_train[i])
+    ax.set_title(f'{class_names[y_train[i][0]]}')
+    ax.axis('off')
+plt.suptitle('CIFAR-10 Sample Images')
+plt.tight_layout()
+plt.savefig('cifar10_samples.png')
+plt.show()
+print("✅ CIFAR-10 samples saved as 'cifar10_samples.png'")
+
+# 2. Build a simple CNN
+print("\n2. BUILDING A SIMPLE CNN:")
+
+def create_simple_cnn():
+    """Create a simple CNN for CIFAR-10"""
+    
+    model = models.Sequential([
+        # First convolutional block
+        layers.Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+        layers.BatchNormalization(),
+        layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        
+        # Second convolutional block
+        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        
+        # Third convolutional block
+        layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        
+        # Classifier
+        layers.Flatten(),
+        layers.Dense(256, activation='relu'),
+        layers.BatchNormalization(),
+        layers.Dropout(0.5),
+        layers.Dense(10, activation='softmax')
+    ])
+    
+    return model
+
+simple_cnn = create_simple_cnn()
+print("Simple CNN summary:")
+simple_cnn.summary()
+
+# 3. Train the model
+print("\n3. TRAINING THE CNN:")
+
+simple_cnn.compile(
+    optimizer=keras.optimizers.Adam(learning_rate=0.001),
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# Callbacks
+callbacks = [
+    keras.callbacks.EarlyStopping(
+        monitor='val_loss',
+        patience=5,
+        restore_best_weights=True
+    ),
+    keras.callbacks.ReduceLROnPlateau(
+        monitor='val_loss',
+        factor=0.5,
+        patience=3,
+        min_lr=1e-6
+    ),
+    keras.callbacks.ModelCheckpoint(
+        'best_cifar_cnn.h5',
+        monitor='val_accuracy',
+        save_best_only=True
+    )
+]
+
+# Train
+history = simple_cnn.fit(
+    X_train, y_train_cat,
+    batch_size=64,
+    epochs=30,
+    validation_split=0.2,
+    callbacks=callbacks,
+    verbose=1
+)
+
+# 4. Evaluate model
+print("\n4. EVALUATING THE MODEL:")
+
+# Plot training history
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+# Loss
+axes[0].plot(history.history['loss'], 'b-', label='Training Loss', linewidth=2)
+axes[0].plot(history.history['val_loss'], 'r-', label='Validation Loss', linewidth=2)
+axes[0].set_xlabel('Epoch')
+axes[0].set_ylabel('Loss')
+axes[0].set_title('Training and Validation Loss')
+axes[0].legend()
+axes[0].grid(True, alpha=0.3)
+
+# Accuracy
+axes[1].plot(history.history['accuracy'], 'b-', label='Training Accuracy', linewidth=2)
+axes[1].plot(history.history['val_accuracy'], 'r-', label='Validation Accuracy', linewidth=2)
+axes[1].set_xlabel('Epoch')
+axes[1].set_ylabel('Accuracy')
+axes[1].set_title('Training and Validation Accuracy')
+axes[1].legend()
+axes[1].grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('cifar_training.png')
+plt.show()
+print("✅ Training history saved as 'cifar_training.png'")
+
+# Test evaluation
+test_loss, test_acc = simple_cnn.evaluate(X_test, y_test_cat, verbose=0)
+print(f"\nTest Loss: {test_loss:.4f}")
+print(f"Test Accuracy: {test_acc:.4f}")
+
+# 5. Confusion matrix
+print("\n5. CONFUSION MATRIX:")
+
+y_pred = simple_cnn.predict(X_test)
+y_pred_classes = np.argmax(y_pred, axis=1)
+y_true = y_test.flatten()
+
+cm = confusion_matrix(y_true, y_pred_classes)
+
+plt.figure(figsize=(12, 10))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=class_names, yticklabels=class_names)
+plt.xlabel('Predicted')
+plt.ylabel('True')
+plt.title('Confusion Matrix - CIFAR-10 Classification')
+plt.savefig('cifar_confusion_matrix.png')
+plt.show()
+print("✅ Confusion matrix saved as 'cifar_confusion_matrix.png'")
+
+# 6. Classification report
+print("\n6. CLASSIFICATION REPORT:")
+print(classification_report(y_true, y_pred_classes, target_names=class_names))
+
+# 7. Visualize predictions
+print("\n7. VISUALIZING PREDICTIONS:")
+
+# Get random test samples
+n_samples = 10
+sample_indices = np.random.choice(len(X_test), n_samples, replace=False)
+
+fig, axes = plt.subplots(2, 5, figsize=(15, 6))
+
+for i, (ax, idx) in enumerate(zip(axes.flat, sample_indices)):
+    ax.imshow(X_test[idx])
+    true_label = class_names[y_true[idx]]
+    pred_label = class_names[y_pred_classes[idx]]
+    prob = np.max(y_pred[idx])
+    
+    color = 'green' if true_label == pred_label else 'red'
+    ax.set_title(f'True: {true_label}\nPred: {pred_label} ({prob:.2f})', color=color)
+    ax.axis('off')
+
+plt.suptitle('CIFAR-10 Predictions')
+plt.tight_layout()
+plt.savefig('cifar_predictions.png')
+plt.show()
+print("✅ Predictions visualization saved as 'cifar_predictions.png'")
+
+# 8. Experiment with different architectures
+print("\n8. COMPARING DIFFERENT ARCHITECTURES:")
+
+architectures = {
+    'Simple': lambda: models.Sequential([
+        layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation='relu'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Flatten(),
+        layers.Dense(64, activation='relu'),
+        layers.Dense(10, activation='softmax')
+    ]),
+    'Medium': lambda: models.Sequential([
+        layers.Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+        layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
+        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        layers.Flatten(),
+        layers.Dense(512, activation='relu'),
+        layers.Dropout(0.5),
+        layers.Dense(10, activation='softmax')
+    ]),
+    'Deep': create_simple_cnn
+}
+
+results = {}
+
+for name, builder in architectures.items():
+    print(f"\nTraining {name} architecture...")
+    
+    model = builder()
+    model.compile(
+        optimizer='adam',
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    history = model.fit(
+        X_train[:10000], y_train_cat[:10000],  # Use subset for speed
+        batch_size=64,
+        epochs=10,
+        validation_split=0.2,
+        verbose=0
+    )
+    
+    val_acc = history.history['val_accuracy'][-1]
+    results[name] = val_acc
+    print(f"  Validation Accuracy: {val_acc:.4f}")
+
+# Plot comparison
+plt.figure(figsize=(10, 6))
+plt.bar(results.keys(), results.values(), edgecolor='black')
+plt.ylabel('Validation Accuracy')
+plt.title('Architecture Comparison')
+plt.grid(True, alpha=0.3, axis='y')
+plt.savefig('architecture_comparison.png')
+plt.show()
+print("✅ Architecture comparison saved as 'architecture_comparison.png'")
+
