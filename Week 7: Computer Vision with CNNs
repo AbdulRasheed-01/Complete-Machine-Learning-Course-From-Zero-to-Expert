@@ -772,3 +772,262 @@ plt.savefig('feature_maps_pretrained.png')
 plt.show()
 print("✅ Feature maps saved as 'feature_maps_pretrained.png'")
 
+Exercise 4: Data Augmentation
+# data_augmentation.py
+"""
+Data augmentation techniques to improve model performance
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, models
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("DATA AUGMENTATION")
+print("="*60)
+
+# 1. Load sample data
+print("\n1. LOADING SAMPLE DATA:")
+
+(X_train, y_train), (X_test, y_test) = keras.datasets.cifar10.load_data()
+X_train = X_train.astype('float32') / 255.0
+X_test = X_test.astype('float32') / 255.0
+
+class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer',
+               'dog', 'frog', 'horse', 'ship', 'truck']
+
+# Take a subset
+X_sample = X_train[:8]
+
+# 2. Define augmentation techniques
+print("\n2. AUGMENTATION TECHNIQUES:")
+
+# Original images
+fig, axes = plt.subplots(2, 4, figsize=(15, 6))
+for i, ax in enumerate(axes.flat):
+    ax.imshow(X_sample[i])
+    ax.set_title(f'Original: {class_names[y_train[i][0]]}')
+    ax.axis('off')
+plt.suptitle('Original Images')
+plt.tight_layout()
+plt.savefig('aug_original.png')
+plt.show()
+
+# Rotation
+print("\nRotation augmentation...")
+datagen_rotate = ImageDataGenerator(rotation_range=30)
+rotated = next(datagen_rotate.flow(X_sample, batch_size=8))
+
+fig, axes = plt.subplots(2, 4, figsize=(15, 6))
+for i, ax in enumerate(axes.flat):
+    ax.imshow(rotated[i])
+    ax.set_title('Rotated')
+    ax.axis('off')
+plt.suptitle('Rotation Augmentation (30°)')
+plt.tight_layout()
+plt.savefig('aug_rotation.png')
+plt.show()
+
+# Width shift
+print("Width shift augmentation...")
+datagen_width = ImageDataGenerator(width_shift_range=0.2)
+shifted = next(datagen_width.flow(X_sample, batch_size=8))
+
+fig, axes = plt.subplots(2, 4, figsize=(15, 6))
+for i, ax in enumerate(axes.flat):
+    ax.imshow(shifted[i])
+    ax.set_title('Width Shift')
+    ax.axis('off')
+plt.suptitle('Width Shift Augmentation (20%)')
+plt.tight_layout()
+plt.savefig('aug_width_shift.png')
+plt.show()
+
+# Height shift
+print("Height shift augmentation...")
+datagen_height = ImageDataGenerator(height_shift_range=0.2)
+shifted = next(datagen_height.flow(X_sample, batch_size=8))
+
+fig, axes = plt.subplots(2, 4, figsize=(15, 6))
+for i, ax in enumerate(axes.flat):
+    ax.imshow(shifted[i])
+    ax.set_title('Height Shift')
+    ax.axis('off')
+plt.suptitle('Height Shift Augmentation (20%)')
+plt.tight_layout()
+plt.savefig('aug_height_shift.png')
+plt.show()
+
+# Horizontal flip
+print("Horizontal flip augmentation...")
+datagen_flip = ImageDataGenerator(horizontal_flip=True)
+flipped = next(datagen_flip.flow(X_sample, batch_size=8))
+
+fig, axes = plt.subplots(2, 4, figsize=(15, 6))
+for i, ax in enumerate(axes.flat):
+    ax.imshow(flipped[i])
+    ax.set_title('Horizontal Flip')
+    ax.axis('off')
+plt.suptitle('Horizontal Flip Augmentation')
+plt.tight_layout()
+plt.savefig('aug_flip.png')
+plt.show()
+
+# Zoom
+print("Zoom augmentation...")
+datagen_zoom = ImageDataGenerator(zoom_range=0.2)
+zoomed = next(datagen_zoom.flow(X_sample, batch_size=8))
+
+fig, axes = plt.subplots(2, 4, figsize=(15, 6))
+for i, ax in enumerate(axes.flat):
+    ax.imshow(zoomed[i])
+    ax.set_title('Zoom')
+    ax.axis('off')
+plt.suptitle('Zoom Augmentation (20%)')
+plt.tight_layout()
+plt.savefig('aug_zoom.png')
+plt.show()
+
+# Brightness
+print("Brightness augmentation...")
+datagen_brightness = ImageDataGenerator(brightness_range=[0.5, 1.5])
+bright = next(datagen_brightness.flow(X_sample, batch_size=8))
+
+fig, axes = plt.subplots(2, 4, figsize=(15, 6))
+for i, ax in enumerate(axes.flat):
+    ax.imshow(bright[i])
+    ax.set_title('Brightness')
+    ax.axis('off')
+plt.suptitle('Brightness Augmentation')
+plt.tight_layout()
+plt.savefig('aug_brightness.png')
+plt.show()
+
+# 3. Combined augmentation
+print("\n3. COMBINED AUGMENTATION:")
+
+datagen_combined = ImageDataGenerator(
+    rotation_range=20,
+    width_shift_range=0.1,
+    height_shift_range=0.1,
+    horizontal_flip=True,
+    zoom_range=0.1,
+    brightness_range=[0.8, 1.2]
+)
+
+combined = next(datagen_combined.flow(X_sample, batch_size=8))
+
+fig, axes = plt.subplots(2, 4, figsize=(15, 6))
+for i, ax in enumerate(axes.flat):
+    ax.imshow(combined[i])
+    ax.set_title('Augmented')
+    ax.axis('off')
+plt.suptitle('Combined Augmentation')
+plt.tight_layout()
+plt.savefig('aug_combined.png')
+plt.show()
+
+# 4. Build model with augmentation
+print("\n4. TRAINING WITH AND WITHOUT AUGMENTATION:")
+
+def create_cnn():
+    """Create a simple CNN"""
+    model = models.Sequential([
+        layers.Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(32, 32, 3)),
+        layers.MaxPooling2D((2, 2)),
+        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Flatten(),
+        layers.Dense(64, activation='relu'),
+        layers.Dense(10, activation='softmax')
+    ])
+    return model
+
+# Use smaller dataset for faster comparison
+X_train_small = X_train[:2000]
+y_train_small = keras.utils.to_categorical(y_train[:2000], 10)
+X_val = X_train[2000:2500]
+y_val = keras.utils.to_categorical(y_train[2000:2500], 10)
+
+# Train without augmentation
+print("\nTraining without augmentation...")
+model_no_aug = create_cnn()
+model_no_aug.compile(
+    optimizer='adam',
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+history_no_aug = model_no_aug.fit(
+    X_train_small, y_train_small,
+    batch_size=32,
+    epochs=20,
+    validation_data=(X_val, y_val),
+    verbose=0
+)
+
+# Train with augmentation
+print("Training with augmentation...")
+model_with_aug = create_cnn()
+model_with_aug.compile(
+    optimizer='adam',
+    loss='categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# Create augmented data generator
+datagen = ImageDataGenerator(
+    rotation_range=10,
+    width_shift_range=0.1,
+    height_shift_range=0.1,
+    horizontal_flip=True
+)
+
+train_generator = datagen.flow(X_train_small, y_train_small, batch_size=32)
+
+history_with_aug = model_with_aug.fit(
+    train_generator,
+    steps_per_epoch=len(X_train_small) // 32,
+    epochs=20,
+    validation_data=(X_val, y_val),
+    verbose=0
+)
+
+# Compare results
+plt.figure(figsize=(14, 5))
+
+plt.subplot(1, 2, 1)
+plt.plot(history_no_aug.history['val_accuracy'], 'b-', label='No Augmentation', linewidth=2)
+plt.plot(history_with_aug.history['val_accuracy'], 'r-', label='With Augmentation', linewidth=2)
+plt.xlabel('Epoch')
+plt.ylabel('Validation Accuracy')
+plt.title('Effect of Data Augmentation')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.subplot(1, 2, 2)
+plt.plot(history_no_aug.history['loss'], 'b-', label='No Augmentation - Train', linewidth=2)
+plt.plot(history_no_aug.history['val_loss'], 'b--', label='No Augmentation - Val', linewidth=2)
+plt.plot(history_with_aug.history['loss'], 'r-', label='With Augmentation - Train', linewidth=2)
+plt.plot(history_with_aug.history['val_loss'], 'r--', label='With Augmentation - Val', linewidth=2)
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.title('Loss Comparison')
+plt.legend()
+plt.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('augmentation_comparison.png')
+plt.show()
+print("✅ Augmentation comparison saved as 'augmentation_comparison.png'")
+
+final_no_aug = history_no_aug.history['val_accuracy'][-1]
+final_with_aug = history_with_aug.history['val_accuracy'][-1]
+print(f"\nFinal validation accuracy without augmentation: {final_no_aug:.4f}")
+print(f"Final validation accuracy with augmentation: {final_with_aug:.4f}")
+print(f"Improvement: {(final_with_aug - final_no_aug) * 100:.2f}%")
