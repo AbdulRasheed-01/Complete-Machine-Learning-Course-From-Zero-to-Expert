@@ -1680,3 +1680,164 @@ print("✅ TensorFlow Lite model saved as 'model.tflite'")
 print("\n" + "="*70)
 print("✅ PROJECT COMPLETED SUCCESSFULLY!")
 print("="*70)
+📊 Week 8 Quiz
+# week8_quiz.py
+"""
+Week 8 Quiz - Test your knowledge of Computer Vision with CNNs
+"""
+
+def quiz():
+    score = 0
+    total = 10
+    
+    print("\n" + "="*50)
+    print("WEEK 8 QUIZ - Computer Vision with CNNs")
+    print("="*50)
+    
+    # Question 1
+    print("\n1. What is the primary purpose of a convolutional layer?")
+    print("   a) To reduce image size")
+    print("   b) To extract features from the input")
+    print("   c) To classify images")
+    print("   d) To normalize pixel values")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Convolutional layers extract hierarchical features")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Convolutional layers detect patterns like edges, textures")
+    
+    # Question 2
+    print("\n2. What does a pooling layer do?")
+    print("   a) Increases image resolution")
+    print("   b) Reduces spatial dimensions while preserving important features")
+    print("   c) Adds more filters")
+    print("   d) Normalizes the data")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Pooling downsamples feature maps")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Pooling reduces dimensionality and provides translation invariance")
+    
+    # Question 3
+    print("\n3. What is transfer learning?")
+    print("   a) Training a model from scratch")
+    print("   b) Using a pre-trained model on a new task")
+    print("   c) Transferring data between models")
+    print("   d) Moving models to GPU")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Transfer learning leverages pre-trained models")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Transfer learning adapts existing models to new tasks")
+    
+    # Question 4
+    print("\n4. Why do we use data augmentation?")
+    print("   a) To increase dataset size artificially")
+    print("   b) To reduce overfitting")
+    print("   c) To improve model generalization")
+    print("   d) All of the above")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "d":
+        print("   ✅ Correct! Data augmentation helps with all these aspects")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Data augmentation creates variations of training data")
+    
+    # Question 5
+    print("\n5. What is the main advantage of residual connections (ResNet)?")
+    print("   a) They make networks faster")
+    print("   b) They allow training of very deep networks by mitigating vanishing gradients")
+    print("   c) They reduce model size")
+    print("   d) They improve only classification accuracy")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Skip connections help gradients flow through deep networks")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Residual connections solve the degradation problem")
+    
+    # Question 6
+    print("\n6. In object detection, what does IoU (Intersection over Union) measure?")
+    print("   a) Classification accuracy")
+    print("   b) Overlap between predicted and ground truth bounding boxes")
+    print("   c) Inference speed")
+    print("   d) Model size")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! IoU measures bounding box accuracy")
+        score += 1
+    else:
+        print("   ❌ Incorrect. IoU is the ratio of intersection to union of boxes")
+    
+    # Question 7
+    print("\n7. What does the 'stride' parameter in convolution control?")
+    print("   a) The number of filters")
+    print("   b) How much the filter moves at each step")
+    print("   c) The size of the filter")
+    print("   d) The activation function")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Stride determines the step size of convolution")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Larger stride results in smaller output")
+    
+    # Question 8
+    print("\n8. What is the purpose of fine-tuning in transfer learning?")
+    print("   a) To train only the new classifier layers")
+    print("   b) To unfreeze and retrain some pre-trained layers")
+    print("   c) To adjust hyperparameters")
+    print("   d) To add more data")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "b":
+        print("   ✅ Correct! Fine-tuning adapts pre-trained features to new data")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Fine-tuning updates pre-trained weights with low learning rate")
+    
+    # Question 9
+    print("\n9. Which architecture introduced the concept of inception modules?")
+    print("   a) VGGNet")
+    print("   b) ResNet")
+    print("   c) GoogleNet/Inception")
+    print("   d) AlexNet")
+    answer = input("   Your answer (a/b/c/d): ").lower()
+    if answer == "c":
+        print("   ✅ Correct! GoogleNet introduced inception modules")
+        score += 1
+    else:
+        print("   ❌ Incorrect. Inception modules use multiple filter sizes in parallel")
+    
+    # Question 10
+    print("\n10. What is the main challenge in object detection compared to classification?")
+    print("    a) It requires localization in addition to classification")
+    print("    b) It needs more data")
+    print("    c) It's slower")
+    print("    d) All of the above")
+    answer = input("    Your answer (a/b/c/d): ").lower()
+    if answer == "a":
+        print("    ✅ Correct! Object detection must find where objects are")
+        score += 1
+    else:
+        print("    ❌ Incorrect. Detection combines classification with bounding box regression")
+    
+    # Final score
+    print("\n" + "="*50)
+    print(f"QUIZ COMPLETE! Your score: {score}/{total}")
+    print("="*50)
+    
+    if score == total:
+        print("🏆 Perfect! You're a computer vision expert!")
+    elif score >= 8:
+        print("🌟 Great job! You have a solid understanding!")
+    elif score >= 6:
+        print("📚 Good effort! Review the topics you missed.")
+    else:
+        print("💪 Keep practicing! Computer vision is a complex field.")
+
+if __name__ == "__main__":
+    quiz()
+
