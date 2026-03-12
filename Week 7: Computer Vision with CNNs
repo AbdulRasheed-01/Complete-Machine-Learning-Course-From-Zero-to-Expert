@@ -40,3 +40,229 @@ EfficientNet	    |          2019	     |     Neural architecture search	         
 🔧 Practical Exercises
 Exercise 1: CNN from Scratch
 
+# cnn_from_scratch.py
+"""
+Building a Convolutional Neural Network from scratch with NumPy
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*60)
+print("CNN FROM SCRATCH")
+print("="*60)
+
+# 1. Implement convolution operation
+print("\n1. CONVOLUTION OPERATION FROM SCRATCH:")
+
+def conv2d_single(input_matrix, kernel, stride=1, padding=0):
+    """
+    Perform 2D convolution on a single channel
+    """
+    # Add padding
+    if padding > 0:
+        input_padded = np.pad(input_matrix, padding, mode='constant')
+    else:
+        input_padded = input_matrix
+    
+    h, w = input_padded.shape
+    kh, kw = kernel.shape
+    
+    # Output dimensions
+    out_h = (h - kh) // stride + 1
+    out_w = (w - kw) // stride + 1
+    
+    output = np.zeros((out_h, out_w))
+    
+    # Perform convolution
+    for i in range(0, out_h):
+        for j in range(0, out_w):
+            i_start = i * stride
+            i_end = i_start + kh
+            j_start = j * stride
+            j_end = j_start + kw
+            
+            patch = input_padded[i_start:i_end, j_start:j_end]
+            output[i, j] = np.sum(patch * kernel)
+    
+    return output
+
+# Test convolution
+input_image = np.array([
+    [1, 2, 3, 4, 5],
+    [6, 7, 8, 9, 10],
+    [11, 12, 13, 14, 15],
+    [16, 17, 18, 19, 20],
+    [21, 22, 23, 24, 25]
+])
+
+kernel = np.array([
+    [1, 0, -1],
+    [2, 0, -2],
+    [1, 0, -1]
+])  # Sobel edge detection kernel
+
+output = conv2d_single(input_image, kernel)
+print("Input image shape:", input_image.shape)
+print("Kernel shape:", kernel.shape)
+print("Output shape:", output.shape)
+print("Output:\n", output)
+
+# 2. Implement max pooling
+print("\n2. MAX POOLING FROM SCRATCH:")
+
+def max_pool2d(input_matrix, pool_size=2, stride=2):
+    """
+    Perform 2D max pooling
+    """
+    h, w = input_matrix.shape
+    out_h = (h - pool_size) // stride + 1
+    out_w = (w - pool_size) // stride + 1
+    
+    output = np.zeros((out_h, out_w))
+    
+    for i in range(0, out_h):
+        for j in range(0, out_w):
+            i_start = i * stride
+            i_end = i_start + pool_size
+            j_start = j * stride
+            j_end = j_start + pool_size
+            
+            patch = input_matrix[i_start:i_end, j_start:j_end]
+            output[i, j] = np.max(patch)
+    
+    return output
+
+# Test max pooling
+pooled = max_pool2d(input_image)
+print("Original shape:", input_image.shape)
+print("Pooled shape:", pooled.shape)
+print("Pooled output:\n", pooled)
+
+# 3. Simple CNN class
+print("\n3. SIMPLE CNN CLASS:")
+
+class SimpleCNN:
+    """A simple CNN for digit classification"""
+    
+    def __init__(self):
+        # Initialize weights (simplified - just for demonstration)
+        self.conv1_kernel = np.random.randn(3, 3) * 0.1
+        self.fc_weights = np.random.randn(36, 10) * 0.1  # 6x6 after pooling * 1 channel
+        self.fc_bias = np.zeros(10)
+    
+    def forward(self, X):
+        """
+        Forward pass:
+        Input (28x28) -> Conv (3x3) -> ReLU -> MaxPool (2x2) -> Flatten -> FC
+        """
+        batch_size = X.shape[0]
+        conv_outputs = []
+        
+        for i in range(batch_size):
+            # Conv layer
+            conv = conv2d_single(X[i], self.conv1_kernel)
+            # ReLU
+            relu = np.maximum(conv, 0)
+            # Max pooling
+            pooled = max_pool2d(relu, pool_size=2, stride=2)
+            conv_outputs.append(pooled.flatten())
+        
+        # Flatten and FC layer
+        flattened = np.array(conv_outputs)
+        output = np.dot(flattened, self.fc_weights) + self.fc_bias
+        
+        # Softmax
+        exp_output = np.exp(output - np.max(output, axis=1, keepdims=True))
+        probs = exp_output / np.sum(exp_output, axis=1, keepdims=True)
+        
+        return probs
+    
+    def predict(self, X):
+        probs = self.forward(X)
+        return np.argmax(probs, axis=1)
+
+# Load digits dataset
+digits = load_digits()
+X = digits.images.reshape(-1, 8, 8)  # 8x8 images
+y = digits.target
+
+# Normalize
+X = X / 16.0
+
+# Split
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# Test CNN (just for demonstration - not trained)
+cnn = SimpleCNN()
+sample_pred = cnn.predict(X_train[:5])
+print("Sample predictions (random weights):", sample_pred)
+
+# 4. Visualize convolution effects
+print("\n4. VISUALIZING CONVOLUTION EFFECTS:")
+
+# Create a simple image
+image = np.zeros((50, 50))
+image[20:30, 20:30] = 1  # White square
+
+# Different kernels
+kernels = {
+    'Identity': np.array([[0, 0, 0], [0, 1, 0], [0, 0, 0]]),
+    'Edge Detection': np.array([[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]]),
+    'Sharpen': np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]]),
+    'Gaussian Blur': np.array([[1, 2, 1], [2, 4, 2], [1, 2, 1]]) / 16,
+    'Sobel X': np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]]),
+    'Sobel Y': np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]])
+}
+
+fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+
+for ax, (name, kernel) in zip(axes.flatten(), kernels.items()):
+    # Apply convolution
+    convolved = conv2d_single(image, kernel)
+    
+    # Display
+    ax.imshow(convolved, cmap='gray')
+    ax.set_title(f'{name} Kernel')
+    ax.axis('off')
+
+plt.suptitle('Effect of Different Convolution Kernels')
+plt.tight_layout()
+plt.savefig('convolution_kernels.png')
+plt.show()
+print("✅ Convolution kernels visualization saved as 'convolution_kernels.png'")
+
+# 5. Feature map visualization
+print("\n5. FEATURE MAP VISUALIZATION:")
+
+# Load a real image (create a simple pattern)
+test_image = np.zeros((64, 64))
+test_image[20:44, 20:44] = 1  # Square
+test_image[30:34, 30:34] = 0  # Hole in middle
+test_image[10:15, 45:50] = 0.5  # Another shape
+
+# Random kernels
+np.random.seed(42)
+n_kernels = 6
+kernels = np.random.randn(n_kernels, 3, 3) * 0.5
+
+fig, axes = plt.subplots(2, n_kernels//2, figsize=(15, 6))
+
+# Original image
+for ax in axes.flatten():
+    ax.imshow(test_image, cmap='gray')
+    ax.set_title('Original')
+    ax.axis('off')
+
+plt.suptitle('Feature Maps from Different Kernels')
+plt.tight_layout()
+plt.savefig('feature_maps.png')
+plt.show()
+print("✅ Feature maps visualization saved as 'feature_maps.png'")
