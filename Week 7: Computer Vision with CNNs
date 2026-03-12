@@ -1254,4 +1254,429 @@ plt.tight_layout()
 plt.savefig('detection_demo.png')
 plt.show()
 print("✅ Detection demo saved as 'detection_demo.png'")
+📝 Weekly Project: Image Classification with Transfer Learning
+# week8_project.py
+"""
+WEEK 8 PROJECT: Image Classification with Transfer Learning
+Complete pipeline for real-world image classification
+"""
 
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, models
+from tensorflow.keras.applications import VGG16, ResNet50, InceptionV3
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from sklearn.metrics import confusion_matrix, classification_report
+import seaborn as sns
+import os
+import zipfile
+from pathlib import Path
+import warnings
+warnings.filterwarnings('ignore')
+
+print("="*70)
+print("WEEK 8 PROJECT: IMAGE CLASSIFICATION WITH TRANSFER LEARNING")
+print("="*70)
+
+# 1. Create synthetic dataset
+print("\n1. CREATING SYNTHETIC DATASET:")
+
+def create_synthetic_dataset(n_samples_per_class=100, img_size=64):
+    """Create a synthetic dataset of shapes"""
+    
+    classes = ['circle', 'square', 'triangle', 'rectangle']
+    X = []
+    y = []
+    
+    for class_idx, class_name in enumerate(classes):
+        for i in range(n_samples_per_class):
+            # Create blank image
+            img = np.ones((img_size, img_size, 3), dtype=np.float32)
+            
+            # Random position
+            center_x = np.random.randint(20, img_size-20)
+            center_y = np.random.randint(20, img_size-20)
+            
+            # Random color
+            color = np.random.random(3)
+            
+            if class_name == 'circle':
+                radius = np.random.randint(10, 20)
+                cv2.circle(img, (center_x, center_y), radius, color.tolist(), -1)
+                
+            elif class_name == 'square':
+                size = np.random.randint(15, 25)
+                x1 = center_x - size//2
+                y1 = center_y - size//2
+                x2 = center_x + size//2
+                y2 = center_y + size//2
+                cv2.rectangle(img, (x1, y1), (x2, y2), color.tolist(), -1)
+                
+            elif class_name == 'triangle':
+                size = np.random.randint(15, 25)
+                points = np.array([
+                    [center_x, center_y - size],
+                    [center_x - size, center_y + size//2],
+                    [center_x + size, center_y + size//2]
+                ], np.int32)
+                cv2.fillPoly(img, [points], color.tolist())
+                
+            elif class_name == 'rectangle':
+                width = np.random.randint(15, 30)
+                height = np.random.randint(10, 20)
+                x1 = center_x - width//2
+                y1 = center_y - height//2
+                x2 = center_x + width//2
+                y2 = center_y + height//2
+                cv2.rectangle(img, (x1, y1), (x2, y2), color.tolist(), -1)
+            
+            # Add some noise
+            img += np.random.randn(img_size, img_size, 3) * 0.05
+            img = np.clip(img, 0, 1)
+            
+            X.append(img)
+            y.append(class_idx)
+    
+    return np.array(X), np.array(y), classes
+
+# Try to import cv2, if not available, create a simpler dataset
+try:
+    import cv2
+    X, y, class_names = create_synthetic_dataset(n_samples_per_class=150)
+    print(f"Dataset created with OpenCV")
+except ImportError:
+    print("OpenCV not available, creating simple dataset")
+    # Create simple colored patches as fallback
+    X = []
+    y = []
+    class_names = ['red', 'green', 'blue', 'yellow']
+    for class_idx, color in enumerate([[1,0,0], [0,1,0], [0,0,1], [1,1,0]]):
+        for i in range(150):
+            img = np.ones((64, 64, 3)) * np.array(color) * 0.8
+            img += np.random.randn(64, 64, 3) * 0.1
+            img = np.clip(img, 0, 1)
+            X.append(img)
+            y.append(class_idx)
+    X = np.array(X)
+    y = np.array(y)
+
+print(f"Dataset shape: {X.shape}")
+print(f"Number of classes: {len(class_names)}")
+print(f"Class names: {class_names}")
+print(f"Class distribution: {np.bincount(y)}")
+
+# Visualize samples
+fig, axes = plt.subplots(2, 4, figsize=(15, 8))
+for i, ax in enumerate(axes.flat[:8]):
+    ax.imshow(X[i])
+    ax.set_title(f'Class: {class_names[y[i]]}')
+    ax.axis('off')
+plt.suptitle('Sample Images from Dataset')
+plt.tight_layout()
+plt.savefig('project_samples.png')
+plt.show()
+print("✅ Sample images saved as 'project_samples.png'")
+
+# 2. Split data
+print("\n2. SPLITTING DATA:")
+
+from sklearn.model_selection import train_test_split
+
+# Split into train+val and test
+X_train_val, X_test, y_train_val, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y
+)
+
+# Split train into train and validation
+X_train, X_val, y_train, y_val = train_test_split(
+    X_train_val, y_train_val, test_size=0.2, random_state=42, stratify=y_train_val
+)
+
+print(f"Training set: {X_train.shape}")
+print(f"Validation set: {X_val.shape}")
+print(f"Test set: {X_test.shape}")
+
+# One-hot encode labels
+y_train_cat = keras.utils.to_categorical(y_train, len(class_names))
+y_val_cat = keras.utils.to_categorical(y_val, len(class_names))
+y_test_cat = keras.utils.to_categorical(y_test, len(class_names))
+
+# 3. Data augmentation
+print("\n3. SETTING UP DATA AUGMENTATION:")
+
+datagen = ImageDataGenerator(
+    rotation_range=20,
+    width_shift_range=0.1,
+    height_shift_range=0.1,
+    horizontal_flip=True,
+    zoom_range=0.1,
+    brightness_range=[0.8, 1.2]
+)
+
+# 4. Build models with transfer learning
+print("\n4. BUILDING TRANSFER LEARNING MODELS:")
+
+def build_transfer_model(base_model, input_shape=(64, 64, 3), num_classes=4):
+    """Build a model on top of a pre-trained base"""
+    
+    # Freeze base model
+    base_model.trainable = False
+    
+    model = models.Sequential([
+        base_model,
+        layers.GlobalAveragePooling2D(),
+        layers.Dense(128, activation='relu'),
+        layers.BatchNormalization(),
+        layers.Dropout(0.5),
+        layers.Dense(64, activation='relu'),
+        layers.BatchNormalization(),
+        layers.Dropout(0.3),
+        layers.Dense(num_classes, activation='softmax')
+    ])
+    
+    return model
+
+# Try different base models
+models_dict = {}
+
+# VGG16
+try:
+    vgg_base = VGG16(weights='imagenet', include_top=False, input_shape=(64, 64, 3))
+    models_dict['VGG16'] = build_transfer_model(vgg_base)
+    print("VGG16 model created")
+except:
+    print("Could not load VGG16")
+
+# ResNet50
+try:
+    resnet_base = ResNet50(weights='imagenet', include_top=False, input_shape=(64, 64, 3))
+    models_dict['ResNet50'] = build_transfer_model(resnet_base)
+    print("ResNet50 model created")
+except:
+    print("Could not load ResNet50")
+
+# Also create a CNN from scratch for comparison
+def build_cnn_scratch(input_shape=(64, 64, 3), num_classes=4):
+    """Build a CNN from scratch"""
+    model = models.Sequential([
+        layers.Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=input_shape),
+        layers.BatchNormalization(),
+        layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        
+        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        
+        layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        
+        layers.Flatten(),
+        layers.Dense(256, activation='relu'),
+        layers.BatchNormalization(),
+        layers.Dropout(0.5),
+        layers.Dense(num_classes, activation='softmax')
+    ])
+    return model
+
+models_dict['CNN Scratch'] = build_cnn_scratch()
+print("CNN from scratch created")
+
+# 5. Train all models
+print("\n5. TRAINING ALL MODELS:")
+
+results = {}
+histories = {}
+
+for name, model in models_dict.items():
+    print(f"\n{'='*50}")
+    print(f"Training {name}")
+    print(f"{'='*50}")
+    
+    model.compile(
+        optimizer=keras.optimizers.Adam(learning_rate=0.001),
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    # Callbacks
+    callbacks = [
+        keras.callbacks.EarlyStopping(
+            monitor='val_loss',
+            patience=10,
+            restore_best_weights=True
+        ),
+        keras.callbacks.ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.5,
+            patience=5,
+            min_lr=1e-6
+        )
+    ]
+    
+    # Train
+    history = model.fit(
+        datagen.flow(X_train, y_train_cat, batch_size=32),
+        steps_per_epoch=len(X_train) // 32,
+        epochs=50,
+        validation_data=(X_val, y_val_cat),
+        callbacks=callbacks,
+        verbose=1
+    )
+    
+    histories[name] = history
+    
+    # Evaluate
+    test_loss, test_acc = model.evaluate(X_test, y_test_cat, verbose=0)
+    results[name] = test_acc
+    print(f"\n{name} Test Accuracy: {test_acc:.4f}")
+
+# 6. Compare results
+print("\n6. COMPARING RESULTS:")
+
+# Plot training histories
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+for ax, (name, history) in zip(axes.flatten()[:len(models_dict)], histories.items()):
+    ax.plot(history.history['accuracy'], label='Training', linewidth=2)
+    ax.plot(history.history['val_accuracy'], label='Validation', linewidth=2)
+    ax.set_title(f'{name} (Test Acc: {results[name]:.4f})')
+    ax.set_xlabel('Epoch')
+    ax.set_ylabel('Accuracy')
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+
+# Hide empty subplots
+for i in range(len(models_dict), 4):
+    axes.flatten()[i].set_visible(False)
+
+plt.tight_layout()
+plt.savefig('project_training_comparison.png')
+plt.show()
+print("✅ Training comparison saved as 'project_training_comparison.png'")
+
+# Bar chart comparison
+plt.figure(figsize=(10, 6))
+bars = plt.bar(results.keys(), results.values(), edgecolor='black')
+plt.ylabel('Test Accuracy')
+plt.title('Model Comparison - Test Accuracy')
+plt.ylim([0, 1])
+
+# Add value labels
+for bar, acc in zip(bars, results.values()):
+    plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01,
+             f'{acc:.4f}', ha='center', va='bottom')
+
+plt.grid(True, alpha=0.3, axis='y')
+plt.savefig('project_model_comparison.png')
+plt.show()
+print("✅ Model comparison saved as 'project_model_comparison.png'")
+
+# 7. Best model evaluation
+print("\n7. BEST MODEL EVALUATION:")
+
+best_model_name = max(results, key=results.get)
+best_model = models_dict[best_model_name]
+best_accuracy = results[best_model_name]
+
+print(f"Best model: {best_model_name}")
+print(f"Best accuracy: {best_accuracy:.4f}")
+
+# Confusion matrix for best model
+y_pred = best_model.predict(X_test)
+y_pred_classes = np.argmax(y_pred, axis=1)
+
+cm = confusion_matrix(y_test, y_pred_classes)
+
+plt.figure(figsize=(10, 8))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+            xticklabels=class_names, yticklabels=class_names)
+plt.xlabel('Predicted')
+plt.ylabel('True')
+plt.title(f'Confusion Matrix - {best_model_name}')
+plt.savefig('project_confusion_matrix.png')
+plt.show()
+print("✅ Confusion matrix saved as 'project_confusion_matrix.png'")
+
+# Classification report
+print(f"\nClassification Report - {best_model_name}:")
+print(classification_report(y_test, y_pred_classes, target_names=class_names))
+
+# 8. Visualize predictions
+print("\n8. VISUALIZING PREDICTIONS:")
+
+n_samples = 16
+sample_indices = np.random.choice(len(X_test), n_samples, replace=False)
+
+fig, axes = plt.subplots(4, 4, figsize=(15, 15))
+
+for ax, idx in zip(axes.flat, sample_indices):
+    ax.imshow(X_test[idx])
+    true_label = class_names[y_test[idx]]
+    pred_label = class_names[y_pred_classes[idx]]
+    confidence = np.max(y_pred[idx])
+    
+    color = 'green' if true_label == pred_label else 'red'
+    ax.set_title(f'True: {true_label}\nPred: {pred_label} ({confidence:.2f})', color=color)
+    ax.axis('off')
+
+plt.suptitle(f'Predictions - {best_model_name}', fontsize=16, y=0.95)
+plt.tight_layout()
+plt.savefig('project_predictions.png')
+plt.show()
+print("✅ Predictions visualization saved as 'project_predictions.png'")
+
+# 9. Error analysis
+print("\n9. ERROR ANALYSIS:")
+
+# Find misclassified examples
+misclassified = np.where(y_pred_classes != y_test)[0]
+print(f"Number of misclassified samples: {len(misclassified)}")
+print(f"Error rate: {len(misclassified)/len(y_test)*100:.2f}%")
+
+if len(misclassified) > 0:
+    # Show some misclassifications
+    n_mis = min(8, len(misclassified))
+    fig, axes = plt.subplots(2, 4, figsize=(15, 8))
+    
+    for ax, idx in zip(axes.flat[:n_mis], misclassified[:n_mis]):
+        ax.imshow(X_test[idx])
+        true_label = class_names[y_test[idx]]
+        pred_label = class_names[y_pred_classes[idx]]
+        confidence = np.max(y_pred[idx])
+        
+        ax.set_title(f'True: {true_label}\nPred: {pred_label} ({confidence:.2f})', color='red')
+        ax.axis('off')
+    
+    plt.suptitle('Misclassified Examples', fontsize=16)
+    plt.tight_layout()
+    plt.savefig('project_misclassified.png')
+    plt.show()
+    print("✅ Misclassified examples saved as 'project_misclassified.png'")
+
+# 10. Save best model
+print("\n10. SAVING BEST MODEL:")
+
+best_model.save(f'best_model_{best_model_name}.h5')
+print(f"✅ Best model saved as 'best_model_{best_model_name}.h5'")
+
+# Convert to TensorFlow Lite
+converter = tf.lite.TFLiteConverter.from_keras_model(best_model)
+tflite_model = converter.convert()
+
+with open('model.tflite', 'wb') as f:
+    f.write(tflite_model)
+print("✅ TensorFlow Lite model saved as 'model.tflite'")
+
+print("\n" + "="*70)
+print("✅ PROJECT COMPLETED SUCCESSFULLY!")
+print("="*70)
